@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fold the Map — Editing Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0a0d13;
+  --panel:#10141c;
+  --panel-2:#0d1119;
+  --line:#1e2530;
+  --line-soft:#161b24;
+  --cyan:#5ee9ff;
+  --cyan-dim:#2a5661;
+  --amber:#f2a65a;
+  --amber-dim:#5c4326;
+  --red:#ff6b7a;
+  --red-dim:#4a2a30;
+  --text:#e7ecf3;
+  --text-mute:#7c8797;
+  --text-faint:#4c5665;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+body{
+  font-family:'Fraunces',serif;
+  min-height:100vh;
+  padding-bottom:120px;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(94,233,255,0.05), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 90% 20%, rgba(242,166,90,0.04), transparent 60%);
+}
+
+/* ---------- header ---------- */
+header{
+  padding:48px 24px 28px;
+  max-width:840px;
+  margin:0 auto;
+  position:relative;
+}
+.eyebrow{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--cyan);
+  opacity:.75;
+  margin-bottom:10px;
+}
+h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:clamp(28px,5vw,42px);
+  letter-spacing:-.01em;
+  margin:0 0 8px;
+  line-height:1.05;
+}
+h1 span{color:var(--amber);}
+.sub{
+  color:var(--text-mute);
+  font-size:15px;
+  font-style:italic;
+  max-width:60ch;
+  line-height:1.5;
+}
+.wave{
+  width:100%;
+  height:26px;
+  margin-top:26px;
+  opacity:.55;
+}
+
+/* ---------- legend ---------- */
+.legend{
+  max-width:840px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--text-mute);
+}
+.legend .item{display:flex;align-items:center;gap:7px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;}
+.dot.keep{background:var(--cyan);box-shadow:0 0 6px rgba(94,233,255,.5);}
+.dot.flag{background:var(--amber);box-shadow:0 0 6px rgba(242,166,90,.5);}
+.dot.cut{background:var(--red);box-shadow:0 0 6px rgba(255,107,122,.4);}
+
+/* ---------- sections ---------- */
+main{max-width:840px;margin:0 auto;padding:20px 24px 0;}
+
+.section{
+  margin-bottom:22px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  overflow:hidden;
+}
+.section.spec-voice{border-color:#26313f;}
+
+.sec-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--line-soft);
+  cursor:pointer;
+  user-select:none;
+}
+.sec-head:hover{background:rgba(255,255,255,0.015);}
+.sec-tag{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;
+  font-size:13.5px;
+  letter-spacing:.03em;
+  color:var(--cyan);
+}
+.spec-voice .sec-tag{color:var(--amber);}
+.sec-tag .fn{
+  font-weight:400;
+  font-style:italic;
+  color:var(--text-mute);
+  margin-left:8px;
+  font-size:12.5px;
+}
+.sec-controls{display:flex;align-items:center;gap:10px;flex:none;}
+.lock-btn{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  background:none;
+  border:1px solid var(--line);
+  color:var(--text-faint);
+  padding:4px 10px;
+  border-radius:20px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.lock-btn:hover{border-color:var(--text-mute);color:var(--text-mute);}
+.lock-btn.locked{border-color:var(--cyan-dim);color:var(--cyan);background:rgba(94,233,255,0.06);}
+.chevron{color:var(--text-faint);font-size:12px;transition:transform .2s;}
+.section.collapsed .chevron{transform:rotate(-90deg);}
+
+.sec-body{padding:14px 18px 16px;}
+.section.collapsed .sec-body{display:none;}
+
+.lines{display:flex;flex-direction:column;gap:2px;}
+
+.line-row{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:5px 6px;
+  border-radius:6px;
+  border-left:2px solid transparent;
+  transition:background .12s, border-color .12s, opacity .2s, transform .2s;
+}
+.line-row:hover{background:rgba(255,255,255,0.02);}
+.line-row.state-flag{border-left-color:var(--amber);background:rgba(242,166,90,0.045);}
+.line-row.state-cut{
+  border-left-color:var(--red);
+  opacity:.4;
+  transform:translateX(6px) scale(.99);
+}
+.line-row.state-cut .lyric-text{text-decoration:line-through;text-decoration-color:var(--red);}
+
+.marker{
+  flex:none;
+  width:16px;height:16px;
+  margin-top:4px;
+  border-radius:50%;
+  border:1.5px solid var(--line);
+  background:transparent;
+  cursor:pointer;
+  position:relative;
+  transition:all .15s;
+}
+.marker:hover{border-color:var(--text-mute);}
+.line-row.state-keep .marker{border-color:var(--cyan-dim);}
+.line-row.state-keep .marker::after{
+  content:'';position:absolute;inset:3px;border-radius:50%;background:var(--cyan);opacity:.85;
+}
+.line-row.state-flag .marker{border-color:var(--amber);}
+.line-row.state-flag .marker::after{
+  content:'';position:absolute;inset:2px;border-radius:50%;background:var(--amber);
+}
+.line-row.state-cut .marker{border-color:var(--red);}
+.line-row.state-cut .marker::after{
+  content:'';position:absolute;left:3px;right:3px;top:50%;height:1.5px;background:var(--red);transform:translateY(-50%);
+}
+
+.lyric-text{
+  flex:1;
+  outline:none;
+  font-size:16.5px;
+  line-height:1.55;
+  color:var(--text);
+  padding:2px 4px;
+  border-radius:4px;
+}
+.lyric-text:focus{background:rgba(94,233,255,0.06);}
+.lyric-text.parenthetical{
+  font-style:italic;
+  color:var(--amber);
+  opacity:.85;
+  font-size:15px;
+  padding-left:14px;
+}
+.lyric-text.spec{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13.5px;
+  color:#b9c3d4;
+  letter-spacing:.01em;
+}
+.spec-voice .lyric-text.spec{color:#d8b98a;}
+
+.sec-notes{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px dashed var(--line-soft);
+}
+.sec-notes label{
+  display:block;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:10.5px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  margin-bottom:6px;
+}
+.sec-notes textarea{
+  width:100%;
+  min-height:40px;
+  background:var(--line-soft);
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--text-mute);
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:13.5px;
+  padding:8px 10px;
+  resize:vertical;
+  outline:none;
+}
+.sec-notes textarea:focus{border-color:var(--cyan-dim);color:var(--text);}
+.sec-notes textarea::placeholder{color:var(--text-faint);}
+
+/* ---------- footer ---------- */
+footer{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:rgba(10,13,19,0.92);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  z-index:10;
+}
+.stats{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12.5px;
+  color:var(--text-mute);
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.stats b{color:var(--text);font-weight:600;}
+.footer-btns{display:flex;gap:10px;}
+button.action{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text-mute);
+  transition:all .15s;
+}
+button.action:hover{color:var(--text);border-color:var(--text-mute);}
+button.primary{
+  background:linear-gradient(135deg, rgba(94,233,255,0.14), rgba(94,233,255,0.06));
+  border-color:var(--cyan-dim);
+  color:var(--cyan);
+}
+button.primary:hover{background:linear-gradient(135deg, rgba(94,233,255,0.22), rgba(94,233,255,0.1));border-color:var(--cyan);}
+button.primary.copied{color:#0a0d13;background:var(--cyan);}
+
+@media (max-width:600px){
+  footer{flex-direction:column;align-items:stretch;}
+  .stats{justify-content:center;}
+  .footer-btns{justify-content:center;}
+}
+
+/* ---------- import modal ---------- */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(6,8,12,0.72);
+  backdrop-filter:blur(3px);
+  display:none;
+  align-items:center;justify-content:center;
+  z-index:50;
+  padding:24px;
+}
+.overlay.open{display:flex;}
+.modal{
+  width:100%;max-width:640px;
+  max-height:82vh;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:22px 22px 18px;
+  display:flex;flex-direction:column;
+  gap:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.modal h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;
+  margin:0;
+  color:var(--cyan);
+}
+.modal p{
+  margin:0;
+  font-size:13px;
+  color:var(--text-mute);
+  line-height:1.5;
+}
+.modal textarea{
+  flex:1;
+  min-height:220px;
+  background:var(--line-soft);
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;
+  line-height:1.5;
+  padding:12px;
+  resize:vertical;
+  outline:none;
+}
+.modal textarea:focus{border-color:var(--cyan-dim);}
+.modal-btns{display:flex;justify-content:flex-end;gap:10px;}
+.modal-status{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--text-faint);
+  min-height:16px;
+}
+.modal-status.err{color:var(--red);}
+.modal-status.ok{color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Editing Console · Live Pass</div>
+  <h1>Fold the <span>Map</span></h1>
+  <div class="sub">Click a marker to cycle a line through <b style="color:var(--cyan)">keep</b> → <b style="color:var(--amber)">flag</b> → <b style="color:var(--red)">cut</b>. Click any line's text to edit it directly. Notes live per-section below the lines.</div>
+  <svg class="wave" viewBox="0 0 800 26" preserveAspectRatio="none">
+    <path d="M0,13 C50,2 100,24 150,13 C200,2 250,24 300,13 C350,2 400,24 450,13 C500,2 550,24 600,13 C650,2 700,24 750,13 C775,7 800,19 800,13"
+      fill="none" stroke="#5ee9ff" stroke-width="1" opacity="0.5"/>
+  </svg>
+</header>
+
+<div class="legend">
+  <span class="item"><span class="dot keep"></span> keep</span>
+  <span class="item"><span class="dot flag"></span> flag — needs a look</span>
+  <span class="item"><span class="dot cut"></span> cut — excluded from export</span>
+</div>
+
+<main id="main"></main>
+
+<footer>
+  <div class="stats" id="stats"></div>
+  <div class="footer-btns">
+    <button class="action" id="resetBtn">Reset to original</button>
+    <button class="action" id="importBtn">Import lyric</button>
+    <button class="action" id="saveSessionBtn">Save session</button>
+    <button class="action primary" id="copyBtn">Copy for chat (lyric + notes)</button>
+    <button class="action" id="downloadBtn">Download .txt</button>
+  </div>
+</footer>
+
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h2>Import lyric</h2>
+    <p>Paste a "Save session" dump to restore exactly where you left off (status, flags, notes all included) — or paste any plain lyric text to load it fresh. This <b>replaces</b> everything currently in the editor.</p>
+    <textarea id="importArea" placeholder="Paste here…"></textarea>
+    <div class="modal-status" id="importStatus"></div>
+    <div class="modal-btns">
+      <button class="action" id="importCancel">Cancel</button>
+      <button class="action primary" id="importLoad">Load into editor</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- data ----------
+const SECTIONS = [
+  { tag: "Drone", fn: "sparse, chant", spec:true, lines: [
+    {t:"MapSheetRippleHelix.", type:"spec"},
+    {t:"SigmaDimensionHidden.", type:"spec"},
+    {t:"DefaultPathMostProbable.", type:"spec"},
+    {t:"TenYearWavelength.", type:"spec"},
+    {t:"AlignmentWindows.", type:"spec"},
+    {t:"FoldCrossesGap.", type:"spec"},
+  ]},
+  { tag: "Opening", fn: "minimal", lines: [
+    {t:"You drew a map."},
+    {t:"Height disappeared."},
+    {t:"Three into two."},
+    {t:"We do this all the time—"},
+    {t:"(Take what is and make it smaller.)", type:"paren"},
+  ]},
+  { tag: "Verse 1", fn: "building", lines: [
+    {t:"You drew the town in lines"},
+    {t:"Then folded up the sky"},
+    {t:"Height got tucked away"},
+    {t:"Just a point will suffice"},
+    {t:"My day keeps circling back"},
+    {t:"Coffee cup, bus stop, rain"},
+    {t:"But put a clock beside the street"},
+    {t:"And it turns into a spiral—"},
+    {t:"(A helix. Not a chain.)", type:"paren"},
+    {t:"(The place comes round again. Never the hour.)", type:"paren"},
+  ]},
+  { tag: "Pre-Chorus", lines: [
+    {t:"Same steps, different hour"},
+    {t:"Same door, different key"},
+    {t:"I feel the hidden bend"},
+    {t:"Pulling quietly"},
+  ]},
+  { tag: "Chorus", fn: "drop", lines: [
+    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
+    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
+    {t:"(Back, back)", type:"paren"},
+  ]},
+  { tag: "Verse 2", fn: "bass heavy", lines: [
+    {t:"The world walks one sure road"},
+    {t:"Most days stay near the line"},
+    {t:"Entropy—not soft, not hand-held—"},
+    {t:"Entropy that pulls toward the probable"},
+    {t:"Leaning hard on what must happen"},
+    {t:"But every deviation—"},
+    {t:"Every strange and unsanctioned step—"},
+    {t:"Leaves a mark in the geometry"},
+    {t:"A ripple in the hours"},
+    {t:"A shadow in its place"},
+  ]},
+  { tag: "Pre-Chorus", lines: [
+    {t:"Same steps, different hour"},
+    {t:"Same door, different key"},
+    {t:"I feel the hidden bend"},
+    {t:"Pulling quietly"},
+  ]},
+  { tag: "Chorus", lines: [
+    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
+    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
+    {t:"(Back, back)", type:"paren"},
+  ]},
+  { tag: "Diatribe 1", fn: "building", lines: [
+    {t:"Listen. The question that I often hear:"},
+    {t:"\u201cHow do I cross the years?\u201d"},
+    {t:"The answer is not Speed."},
+    {t:"It is not Power."},
+    {t:"The answer is: Alignment."},
+    {t:"Most days far-off and near-at-hand"},
+    {t:"Are separated by the full climb of the wave."},
+    {t:"That is true. The math does not lie."},
+    {t:"But somewhere in the geometry—"},
+    {t:"(and this is where the numbers break open)—", type:"paren"},
+    {t:"Two moments sit nearly opposite each other"},
+    {t:"Across a narrow gap."},
+    {t:"The decade makes its own pattern."},
+    {t:"Ten years like a wave."},
+    {t:"And if you wait—"},
+    {t:"(if you can wait)—", type:"paren"},
+    {t:"The window comes."},
+  ]},
+  { tag: "Tech Bridge 1", fn: "rushed, urgent, specification", spec:true, lines: [
+    {t:"Now the scripture—"},
+    {t:"I say scripture because this is how the geometry declares itself—"},
+    {t:"Five-dimensional manifold M5.", type:"spec"},
+    {t:"Coordinates x, y, z, t, sigma.", type:"spec"},
+    {t:"Fold metric with warp functions A, B, C.", type:"spec"},
+    {t:"Confining potential U(sigma): U-naught times sigma plus one-over-sigma minus two.", type:"spec"},
+    {t:"Equilibrium sigma-star equals one.", type:"spec"},
+    {t:"Effective mass m-squared-sigma equals two U-naught over Lambda-cubed.", type:"spec"},
+    {t:"Einstein equations: G-M-N equals kappa T-M-N.", type:"spec"},
+    {t:"Throat equation: partial-squared-sigma B equals negative kappa rho.", type:"spec"},
+    {t:"Positive energy density forces geometric focusing.", type:"spec"},
+    {t:"Focusing equation: partial-squared W equals negative kappa rho W.", type:"spec"},
+    {t:"W acquires a zero—conjugate point, focal point, throat.", type:"spec"},
+    {t:"The pinch forms.", type:"spec"},
+    {t:"Self-sourcing threshold: tau-one-critical equals two square-root two-U-naught Lambda-cubed.", type:"spec"},
+    {t:"Past threshold the fold emerges.", type:"spec"},
+    {t:"Established.", type:"spec"},
+    {t:"Causal shortcut: bulk arrival precedes surface arrival.", type:"spec"},
+    {t:"Reachable set bulk contains surface reachable set.", type:"spec"},
+    {t:"Time travel established.", type:"spec"},
+  ]},
+  { tag: "Verse 3", fn: "rising", lines: [
+    {t:"Not a race, not a leap"},
+    {t:"Just a fold in the seam"},
+    {t:"Some far-off year is near"},
+    {t:"When the ripples align—"},
+    {t:"I wait for the window"},
+    {t:"When the goal is nearest mine"},
+    {t:"Then I slip through the passage"},
+    {t:"Through the geometry of time"},
+  ]},
+  { tag: "Diatribe 2", fn: "peak, build-up", lines: [
+    {t:"Friends."},
+    {t:"Do you hear what this means?"},
+    {t:"Time travel is not about duration."},
+    {t:"It is not about how many years stand in your way."},
+    {t:"It is about alignment."},
+    {t:"The calendar is a false measure."},
+    {t:"The geometry is the truth."},
+    {t:"Distance through time is not time."},
+    {t:"Distance through time is shape."},
+    {t:"And we are living on the shape."},
+    {t:"Every day, on the ripples."},
+    {t:"Waiting only for the fold."},
+    {t:"For the passage to align."},
+    {t:"For the window."},
+  ]},
+  { tag: "Tech Bridge 2", fn: "rushed, urgent, contralto underneath", spec:true, lines: [
+    {t:"The substrate has three voices—"},
+    {t:"The ripple itself.", type:"spec"},
+    {t:"Decade height.", type:"spec"},
+    {t:"Weeks-to-days period.", type:"spec"},
+    {t:"Follow the surface: ten years up, ten years down.", type:"spec"},
+    {t:"But the arrow beneath—entropy always downhill.", type:"spec"},
+    {t:"The slope was steep in the past, gentle now.", type:"spec"},
+    {t:"Local moments—bright, structured, known—punch down into the ripple.", type:"spec"},
+    {t:"Pinch it.", type:"spec"},
+    {t:"Where the amplitude shrinks, two moments far apart on the surface sit close in the bulk.", type:"spec"},
+    {t:"The null path through the higher dimension is shorter than any surface path.", type:"spec"},
+    {t:"You do not climb the wave.", type:"spec"},
+    {t:"You fold through the gap.", type:"spec"},
+    {t:"You arrive in less time.", type:"spec"},
+    {t:"Not speed. Geometry.", type:"spec"},
+    {t:"The window opens when phase aligns and the ripple is pinched.", type:"spec"},
+  ]},
+  { tag: "Chorus", fn: "final, evolved", lines: [
+    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
+    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
+    {t:"(Back, back)", type:"paren"},
+    {t:"Fold the map"},{t:"Fold the map"},{t:"Let the hidden paths unpack"},
+    {t:"Fold the map"},{t:"Fold the map"},{t:"I was lost in the calendar"},
+    {t:"Now I read the ripples"},
+    {t:"(Back, back)", type:"paren"},
+  ]},
+  { tag: "Outro", fn: "slow, meditative", lines: [
+    {t:"The window comes when alignment speaks."},
+    {t:"The fold opens where the ripples meet."},
+    {t:"I was ignorant of the geometry."},
+    {t:"Now I am a witness."},
+    {t:"Fold the map."},
+    {t:"Fold the map."},
+    {t:"Fold the map."},
+  ]},
+];
+
+// deep clone as working state, add ids + status
+let state = SECTIONS.map((sec, si) => ({
+  ...sec,
+  locked: false,
+  note: "",
+  lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, text: l.t, type: l.type || "normal", status: "keep" }))
+}));
+
+const main = document.getElementById('main');
+
+function render(){
+  main.innerHTML = "";
+  state.forEach((sec, si) => {
+    const secEl = document.createElement('div');
+    secEl.className = 'section' + (sec.spec ? ' spec-voice' : '');
+    secEl.dataset.si = si;
+
+    const head = document.createElement('div');
+    head.className = 'sec-head';
+    head.innerHTML = `
+      <div class="sec-tag">[${sec.tag}${sec.fn ? ` <span class="fn">— ${sec.fn}</span>` : ''}]</div>
+      <div class="sec-controls">
+        <button class="lock-btn ${sec.locked ? 'locked' : ''}" data-action="lock">${sec.locked ? 'Locked' : 'Lock'}</button>
+        <span class="chevron">▾</span>
+      </div>
+    `;
+    head.querySelector('[data-action="lock"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      sec.locked = !sec.locked;
+      render();
+    });
+    head.addEventListener('click', () => {
+      secEl.classList.toggle('collapsed');
+    });
+    secEl.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'sec-body';
+
+    const linesWrap = document.createElement('div');
+    linesWrap.className = 'lines';
+
+    sec.lines.forEach((line) => {
+      const row = document.createElement('div');
+      row.className = `line-row state-${line.status}`;
+
+      const marker = document.createElement('div');
+      marker.className = 'marker';
+      marker.title = 'Cycle status';
+      marker.addEventListener('click', () => {
+        if (sec.locked) return;
+        const order = ['keep','flag','cut'];
+        line.status = order[(order.indexOf(line.status) + 1) % 3];
+        render();
+        updateStats();
+      });
+
+      const textEl = document.createElement('div');
+      textEl.className = 'lyric-text' + (line.type === 'paren' ? ' parenthetical' : '') + (line.type === 'spec' ? ' spec' : '');
+      textEl.contentEditable = !sec.locked;
+      textEl.spellcheck = false;
+      textEl.textContent = line.text;
+      textEl.addEventListener('input', () => {
+        line.text = textEl.textContent;
+        updateStats();
+      });
+      textEl.addEventListener('blur', () => {
+        line.text = textEl.textContent.trim();
+      });
+
+      row.appendChild(marker);
+      row.appendChild(textEl);
+      linesWrap.appendChild(row);
+    });
+
+    body.appendChild(linesWrap);
+
+    const notesWrap = document.createElement('div');
+    notesWrap.className = 'sec-notes';
+    notesWrap.innerHTML = `<label>Section notes</label>`;
+    const notesArea = document.createElement('textarea');
+    notesArea.placeholder = 'e.g. tighten the middle four lines, this section is coasting…';
+    notesArea.value = sec.note;
+    notesArea.disabled = sec.locked;
+    notesArea.addEventListener('input', () => { sec.note = notesArea.value; });
+    notesWrap.appendChild(notesArea);
+    body.appendChild(notesWrap);
+
+    secEl.appendChild(body);
+    main.appendChild(secEl);
+  });
+}
+
+function updateStats(){
+  let total = 0, kept = 0, flagged = 0, cut = 0;
+  state.forEach(sec => sec.lines.forEach(l => {
+    total++;
+    if (l.status === 'keep') kept++;
+    if (l.status === 'flag') flagged++;
+    if (l.status === 'cut') cut++;
+  }));
+  document.getElementById('stats').innerHTML =
+    `<span><b>${total}</b> lines</span>` +
+    `<span><b>${flagged}</b> flagged</span>` +
+    `<span><b>${cut}</b> cut</span>`;
+}
+
+function buildFinalText(includeNotes){
+  let out = [];
+  state.forEach(sec => {
+    const keepLines = sec.lines.filter(l => l.status !== 'cut');
+    const flaggedLines = sec.lines.filter(l => l.status === 'flag');
+    if (!keepLines.length && !(includeNotes && sec.note.trim())) return;
+    out.push(`[${sec.tag}${sec.fn ? ' - ' + sec.fn : ''}]`);
+    keepLines.forEach(l => {
+      const mark = includeNotes && l.status === 'flag' ? '  ⚠' : '';
+      out.push(l.text + mark);
+    });
+    if (includeNotes && sec.note.trim()){
+      out.push(`NOTE: ${sec.note.trim()}`);
+    }
+    out.push('');
+  });
+  return out.join('\n').trim() + '\n';
+}
+
+// Lossless dump: every line (including cut), its status, its type, and section notes.
+// This is the format to paste back into Import to restore exact working state.
+function buildSessionText(){
+  let out = [];
+  state.forEach(sec => {
+    out.push(`[${sec.tag}${sec.fn ? ' - ' + sec.fn : ''}]`);
+    sec.lines.forEach(l => {
+      const status = l.status.toUpperCase().padEnd(5, ' ');
+      const specTag = l.type === 'spec' ? ' #spec' : '';
+      out.push(`${status} ${l.text}${specTag}`);
+    });
+    if (sec.note.trim()) out.push(`NOTE: ${sec.note.trim()}`);
+    out.push('');
+  });
+  return out.join('\n').trim() + '\n';
+}
+
+function parseImportText(raw){
+  const lines = raw.replace(/\r\n/g, '\n').split('\n');
+  const sections = [];
+  let current = null;
+
+  const headerRe = /^\[(.+?)\]$/;
+  const statusRe = /^(KEEP|FLAG|CUT)\s+(.*)$/i;
+  const noteRe = /^NOTE:\s*(.*)$/i;
+
+  lines.forEach(raw_line => {
+    const line = raw_line.trim();
+    if (!line) return;
+
+    const headerMatch = line.match(headerRe);
+    if (headerMatch){
+      const inner = headerMatch[1];
+      const dashIdx = inner.indexOf(' - ');
+      const tag = dashIdx === -1 ? inner.trim() : inner.slice(0, dashIdx).trim();
+      const fn = dashIdx === -1 ? '' : inner.slice(dashIdx + 3).trim();
+      const specSection = /drone|tech bridge/i.test(tag);
+      current = { tag, fn, spec: specSection, locked: false, note: '', lines: [] };
+      sections.push(current);
+      return;
+    }
+
+    if (!current){
+      current = { tag: `Section ${sections.length + 1}`, fn: '', spec: false, locked: false, note: '', lines: [] };
+      sections.push(current);
+    }
+
+    const noteMatch = line.match(noteRe);
+    if (noteMatch){
+      current.note = current.note ? current.note + ' ' + noteMatch[1] : noteMatch[1];
+      return;
+    }
+
+    const statusMatch = line.match(statusRe);
+    let status = 'keep';
+    let text = line;
+    if (statusMatch){
+      status = statusMatch[1].toLowerCase();
+      text = statusMatch[2];
+    } else {
+      const flagStrip = text.match(/^(.*?)\s*⚠\s*$/);
+      if (flagStrip){ status = 'flag'; text = flagStrip[1]; }
+    }
+
+    let type = 'normal';
+    const specStrip = text.match(/^(.*?)\s*#spec\s*$/);
+    if (specStrip){ type = 'spec'; text = specStrip[1]; }
+    else if (/^\(.*\)$/.test(text)) type = 'paren';
+    else if (current.spec) type = 'spec';
+
+    current.lines.push({ text: text.trim(), type, status });
+  });
+
+  return sections.filter(s => s.lines.length || s.note);
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state = SECTIONS.map((sec, si) => ({
+    ...sec,
+    locked: false,
+    note: "",
+    lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, text: l.t, type: l.type || "normal", status: "keep" }))
+  }));
+  render();
+  updateStats();
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const text = buildFinalText(true);
+  const btn = document.getElementById('copyBtn');
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  btn.textContent = 'Copied ✓';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'Copy for chat (lyric + notes)'; btn.classList.remove('copied'); }, 1600);
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const text = buildFinalText(true);
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'fold_the_map.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('saveSessionBtn').addEventListener('click', async () => {
+  const text = buildSessionText();
+  const btn = document.getElementById('saveSessionBtn');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = 'Session copied ✓';
+  } catch (e) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fold_the_map_session.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = 'Downloaded ✓';
+  }
+  setTimeout(() => { btn.textContent = 'Save session'; }, 1600);
+});
+
+const importOverlay = document.getElementById('importOverlay');
+const importArea = document.getElementById('importArea');
+const importStatus = document.getElementById('importStatus');
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  importArea.value = '';
+  importStatus.textContent = '';
+  importStatus.className = 'modal-status';
+  importOverlay.classList.add('open');
+  importArea.focus();
+});
+document.getElementById('importCancel').addEventListener('click', () => {
+  importOverlay.classList.remove('open');
+});
+importOverlay.addEventListener('click', (e) => {
+  if (e.target === importOverlay) importOverlay.classList.remove('open');
+});
+
+document.getElementById('importLoad').addEventListener('click', () => {
+  const raw = importArea.value;
+  if (!raw.trim()){
+    importStatus.textContent = 'Paste something first.';
+    importStatus.className = 'modal-status err';
+    return;
+  }
+  let parsed;
+  try {
+    parsed = parseImportText(raw);
+  } catch (e) {
+    parsed = [];
+  }
+  if (!parsed.length){
+    importStatus.textContent = "Couldn't find any lines to import — check the paste.";
+    importStatus.className = 'modal-status err';
+    return;
+  }
+  state = parsed.map((sec, si) => ({
+    ...sec,
+    lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, ...l }))
+  }));
+  render();
+  updateStats();
+  importOverlay.classList.remove('open');
+});
+
+render();
+updateStats();
+</script>
+</body>
+</html>
