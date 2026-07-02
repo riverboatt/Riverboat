@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Timesong Editor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0a0d13;
+  --panel:#10141c;
+  --panel-2:#0d1119;
+  --line:#1e2530;
+  --line-soft:#161b24;
+  --cyan:#5ee9ff;
+  --cyan-dim:#2a5661;
+  --amber:#f2a65a;
+  --amber-dim:#5c4326;
+  --red:#ff6b7a;
+  --red-dim:#4a2a30;
+  --text:#e7ecf3;
+  --text-mute:#7c8797;
+  --text-faint:#4c5665;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+body{
+  font-family:'Fraunces',serif;
+  min-height:100vh;
+  padding-bottom:120px;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(94,233,255,0.05), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 90% 20%, rgba(242,166,90,0.04), transparent 60%);
+}
+
+/* ---------- header ---------- */
+header{
+  padding:48px 24px 28px;
+  max-width:840px;
+  margin:0 auto;
+  position:relative;
+}
+.eyebrow{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--cyan);
+  opacity:.75;
+  margin-bottom:10px;
+}
+h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:clamp(28px,5vw,42px);
+  letter-spacing:-.01em;
+  margin:0 0 8px;
+  line-height:1.05;
+}
+h1 span{color:var(--amber);}
+.sub{
+  color:var(--text-mute);
+  font-size:15px;
+  font-style:italic;
+  max-width:60ch;
+  line-height:1.5;
+}
+.wave{
+  width:100%;
+  height:26px;
+  margin-top:26px;
+  opacity:.55;
+}
+
+/* ---------- legend ---------- */
+.legend{
+  max-width:840px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--text-mute);
+}
+.legend .item{display:flex;align-items:center;gap:7px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;}
+.dot.keep{background:var(--cyan);box-shadow:0 0 6px rgba(94,233,255,.5);}
+.dot.flag{background:var(--amber);box-shadow:0 0 6px rgba(242,166,90,.5);}
+.dot.cut{background:var(--red);box-shadow:0 0 6px rgba(255,107,122,.4);}
+
+/* ---------- sections ---------- */
+main{max-width:840px;margin:0 auto;padding:20px 24px 0;}
+
+.section{
+  margin-bottom:22px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  overflow:hidden;
+}
+.section.spec-voice{border-color:#26313f;}
+
+.sec-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--line-soft);
+  cursor:pointer;
+  user-select:none;
+}
+.sec-head:hover{background:rgba(255,255,255,0.015);}
+.sec-tag{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;
+  font-size:13.5px;
+  letter-spacing:.03em;
+  color:var(--cyan);
+}
+.spec-voice .sec-tag{color:var(--amber);}
+.sec-tag .fn{
+  font-weight:400;
+  font-style:italic;
+  color:var(--text-mute);
+  margin-left:8px;
+  font-size:12.5px;
+}
+.sec-controls{display:flex;align-items:center;gap:10px;flex:none;}
+.lock-btn{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  background:none;
+  border:1px solid var(--line);
+  color:var(--text-faint);
+  padding:4px 10px;
+  border-radius:20px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.lock-btn:hover{border-color:var(--text-mute);color:var(--text-mute);}
+.lock-btn.locked{border-color:var(--cyan-dim);color:var(--cyan);background:rgba(94,233,255,0.06);}
+.chevron{color:var(--text-faint);font-size:12px;transition:transform .2s;}
+.section.collapsed .chevron{transform:rotate(-90deg);}
+
+.sec-body{padding:14px 18px 16px;}
+.section.collapsed .sec-body{display:none;}
+
+.lines{display:flex;flex-direction:column;gap:2px;}
+
+.line-row{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:5px 6px;
+  border-radius:6px;
+  border-left:2px solid transparent;
+  transition:background .12s, border-color .12s, opacity .2s, transform .2s;
+}
+.line-row:hover{background:rgba(255,255,255,0.02);}
+.line-row.state-flag{border-left-color:var(--amber);background:rgba(242,166,90,0.045);}
+.line-row.state-cut{
+  border-left-color:var(--red);
+  opacity:.4;
+  transform:translateX(6px) scale(.99);
+}
+.line-row.state-cut .lyric-text{text-decoration:line-through;text-decoration-color:var(--red);}
+
+.marker{
+  flex:none;
+  width:16px;height:16px;
+  margin-top:4px;
+  border-radius:50%;
+  border:1.5px solid var(--line);
+  background:transparent;
+  cursor:pointer;
+  position:relative;
+  transition:all .15s;
+}
+.marker:hover{border-color:var(--text-mute);}
+.line-row.state-keep .marker{border-color:var(--cyan-dim);}
+.line-row.state-keep .marker::after{
+  content:'';position:absolute;inset:3px;border-radius:50%;background:var(--cyan);opacity:.85;
+}
+.line-row.state-flag .marker{border-color:var(--amber);}
+.line-row.state-flag .marker::after{
+  content:'';position:absolute;inset:2px;border-radius:50%;background:var(--amber);
+}
+.line-row.state-cut .marker{border-color:var(--red);}
+.line-row.state-cut .marker::after{
+  content:'';position:absolute;left:3px;right:3px;top:50%;height:1.5px;background:var(--red);transform:translateY(-50%);
+}
+
+.lyric-text{
+  flex:1;
+  outline:none;
+  font-size:16.5px;
+  line-height:1.55;
+  color:var(--text);
+  padding:2px 4px;
+  border-radius:4px;
+}
+.lyric-text:focus{background:rgba(94,233,255,0.06);}
+.lyric-text.parenthetical{
+  font-style:italic;
+  color:var(--amber);
+  opacity:.85;
+  font-size:15px;
+  padding-left:14px;
+}
+.lyric-text.spec{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13.5px;
+  color:#b9c3d4;
+  letter-spacing:.01em;
+}
+.spec-voice .lyric-text.spec{color:#d8b98a;}
+
+.sec-notes{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px dashed var(--line-soft);
+}
+.sec-notes label{
+  display:block;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:10.5px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  margin-bottom:6px;
+}
+.sec-notes textarea{
+  width:100%;
+  min-height:40px;
+  background:var(--line-soft);
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--text-mute);
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:13.5px;
+  padding:8px 10px;
+  resize:vertical;
+  outline:none;
+}
+.sec-notes textarea:focus{border-color:var(--cyan-dim);color:var(--text);}
+.sec-notes textarea::placeholder{color:var(--text-faint);}
+
+/* ---------- landing ---------- */
+.landing{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 24px 80px;
+  gap:22px;
+}
+.landing-icon{opacity:.5;}
+.landing h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:19px;
+  font-weight:600;
+  color:var(--text);
+  margin:0;
+}
+.landing p{
+  color:var(--text-mute);
+  font-size:14px;
+  max-width:44ch;
+  line-height:1.6;
+  margin:0;
+}
+.landing-choices{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:8px;
+}
+.choice-card{
+  width:220px;
+  padding:22px 18px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  cursor:pointer;
+  transition:all .15s;
+  text-align:left;
+}
+.choice-card:hover{border-color:var(--cyan-dim);transform:translateY(-2px);}
+.choice-card .ctitle{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;
+  font-size:14.5px;
+  color:var(--cyan);
+  margin-bottom:6px;
+}
+.choice-card.gen .ctitle{color:var(--amber);}
+.choice-card .cdesc{
+  font-size:12.5px;
+  color:var(--text-mute);
+  line-height:1.5;
+}
+
+/* ---------- footer ---------- */
+footer{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:rgba(10,13,19,0.92);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  z-index:10;
+}
+.stats{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12.5px;
+  color:var(--text-mute);
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.stats b{color:var(--text);font-weight:600;}
+.footer-btns{display:flex;gap:10px;flex-wrap:wrap;}
+button.action{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text-mute);
+  transition:all .15s;
+}
+button.action:hover{color:var(--text);border-color:var(--text-mute);}
+button.action:disabled{opacity:.5;cursor:default;}
+button.primary{
+  background:linear-gradient(135deg, rgba(94,233,255,0.14), rgba(94,233,255,0.06));
+  border-color:var(--cyan-dim);
+  color:var(--cyan);
+}
+button.primary:hover{background:linear-gradient(135deg, rgba(94,233,255,0.22), rgba(94,233,255,0.1));border-color:var(--cyan);}
+button.primary.copied{color:#0a0d13;background:var(--cyan);}
+
+@media (max-width:600px){
+  footer{flex-direction:column;align-items:stretch;}
+  .stats{justify-content:center;}
+  .footer-btns{justify-content:center;}
+}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(6,8,12,0.72);
+  backdrop-filter:blur(3px);
+  display:none;
+  align-items:center;justify-content:center;
+  z-index:50;
+  padding:24px;
+}
+.overlay.open{display:flex;}
+.modal{
+  width:100%;max-width:640px;
+  max-height:82vh;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:22px 22px 18px;
+  display:flex;flex-direction:column;
+  gap:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.modal h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;
+  margin:0;
+  color:var(--cyan);
+}
+.modal.gen h2{color:var(--amber);}
+.modal p{
+  margin:0;
+  font-size:13px;
+  color:var(--text-mute);
+  line-height:1.5;
+}
+.modal textarea{
+  flex:1;
+  min-height:220px;
+  background:var(--line-soft);
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;
+  line-height:1.5;
+  padding:12px;
+  resize:vertical;
+  outline:none;
+}
+.modal.gen textarea{
+  font-family:'Fraunces',serif;
+  font-size:14px;
+  min-height:140px;
+}
+.modal textarea:focus{border-color:var(--cyan-dim);}
+.modal-btns{display:flex;justify-content:flex-end;gap:10px;}
+.modal-status{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--text-faint);
+  min-height:16px;
+}
+.modal-status.err{color:var(--red);}
+.modal-status.ok{color:var(--cyan);}
+.song-item{
+  text-align:left;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--line-soft);
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13.5px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.song-item:hover{border-color:var(--amber-dim);}
+.song-item:disabled{opacity:.5;cursor:default;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Editing Console · Live Pass</div>
+  <h1>Timesong <span>Editor</span></h1>
+  <div class="sub" id="subtext">Click a marker to cycle a line through keep → flag → cut. Click any line's text to edit it directly. Notes live per-section below the lines.</div>
+  <svg class="wave" viewBox="0 0 800 26" preserveAspectRatio="none">
+    <path d="M0,13 C50,2 100,24 150,13 C200,2 250,24 300,13 C350,2 400,24 450,13 C500,2 550,24 600,13 C650,2 700,24 750,13 C775,7 800,19 800,13"
+      fill="none" stroke="#5ee9ff" stroke-width="1" opacity="0.5"/>
+  </svg>
+</header>
+
+<div class="legend" id="legend" style="display:none;">
+  <span class="item"><span class="dot keep"></span> keep</span>
+  <span class="item"><span class="dot flag"></span> flag — needs a look</span>
+  <span class="item"><span class="dot cut"></span> cut — excluded from export</span>
+</div>
+
+<main id="main"></main>
+
+<footer id="footer" style="display:none;">
+  <div class="stats" id="stats"></div>
+  <div class="footer-btns">
+    <button class="action" id="startOverBtn">Start over</button>
+    <button class="action" id="importBtn">Import lyric</button>
+    <button class="action" id="genFooterBtn">Generate</button>
+    <button class="action" id="saveSessionBtn">Save session</button>
+    <button class="action primary" id="copyBtn">Copy for chat (lyric + notes)</button>
+    <button class="action" id="downloadBtn">Download .txt</button>
+  </div>
+</footer>
+
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h2>Import lyric</h2>
+    <p>Paste a "Save session" dump to restore exactly where you left off (status, flags, notes all included) — or paste any plain lyric text to load it fresh. This <b>replaces</b> everything currently in the editor.</p>
+    <textarea id="importArea" placeholder="Paste here…"></textarea>
+    <div class="modal-status" id="importStatus"></div>
+    <div class="modal-btns">
+      <button class="action" id="importCancel">Cancel</button>
+      <button class="action primary" id="importLoad">Load into editor</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="genOverlay">
+  <div class="modal gen">
+    <h2>Generate</h2>
+
+    <div style="display:flex; flex-direction:column; gap:16px; margin-top:6px;">
+      <div>
+        <label style="display:flex; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--text-mute); margin-bottom:6px;">
+          <span>Weirdness</span>
+          <span id="mkWeirdLabel">Medium</span>
+        </label>
+        <input id="mkWeird" type="range" min="1" max="3" step="1" value="2" style="width:100%;">
+      </div>
+      <div>
+        <label style="display:flex; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--text-mute); margin-bottom:6px;">
+          <span>Length</span>
+          <span id="mkLengthLabel">8 lines</span>
+        </label>
+        <input id="mkLines" type="range" min="4" max="40" step="1" value="8" style="width:100%;">
+      </div>
+      <button class="action primary" id="mkGenerateBtn" style="padding:16px; font-size:15px;">Generate</button>
+    </div>
+
+    <textarea id="mkOutput" readonly placeholder="Generated lines will appear here…" style="width:100%; min-height:130px; margin-top:4px; background:var(--line-soft); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:'Fraunces',serif; font-size:14px; padding:10px; resize:vertical;"></textarea>
+    <div class="modal-status" id="mkStatus"></div>
+
+    <div class="modal-btns">
+      <button class="action" id="mkLoadBtn" style="font-size:11px; padding:6px 12px;">Load</button>
+      <button class="action" id="genCancel">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = [];
+
+const main = document.getElementById('main');
+const footer = document.getElementById('footer');
+const legend = document.getElementById('legend');
+const subtext = document.getElementById('subtext');
+
+const EMPTY_SUB = "Start by importing a lyric you already have, or generate a fresh draft to work from.";
+const FULL_SUB = "Click a marker to cycle a line through keep → flag → cut. Click any line's text to edit it directly. Notes live per-section below the lines.";
+
+function renderLanding(){
+  subtext.textContent = EMPTY_SUB;
+  legend.style.display = 'none';
+  footer.style.display = 'none';
+  main.innerHTML = `
+    <div class="landing">
+      <h2>Nothing loaded yet</h2>
+      <p>This console works on a lyric already in progress. Bring one in, or start from a prompt.</p>
+      <div class="landing-choices">
+        <div class="choice-card" id="landingImport">
+          <div class="ctitle">Import Lyric</div>
+          <div class="cdesc">Paste an existing draft or a saved session dump to start editing it line by line.</div>
+        </div>
+        <div class="choice-card gen" id="landingGenerate">
+          <div class="ctitle">Generate</div>
+          <div class="cdesc">Markov-generate new lines, or load a full song, from the songs/ folder (or this file's own built-in lyric).</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('landingImport').addEventListener('click', openImport);
+  document.getElementById('landingGenerate').addEventListener('click', openGenerate);
+}
+
+function render(){
+  if (!state.length){
+    renderLanding();
+    return;
+  }
+  subtext.textContent = FULL_SUB;
+  legend.style.display = 'flex';
+  footer.style.display = 'flex';
+
+  main.innerHTML = "";
+  state.forEach((sec, si) => {
+    const secEl = document.createElement('div');
+    secEl.className = 'section' + (sec.spec ? ' spec-voice' : '');
+    secEl.dataset.si = si;
+
+    const head = document.createElement('div');
+    head.className = 'sec-head';
+    head.innerHTML = `
+      <div class="sec-tag">[${sec.tag}${sec.fn ? ` <span class="fn">— ${sec.fn}</span>` : ''}]</div>
+      <div class="sec-controls">
+        <button class="lock-btn ${sec.locked ? 'locked' : ''}" data-action="lock">${sec.locked ? 'Locked' : 'Lock'}</button>
+        <span class="chevron">▾</span>
+      </div>
+    `;
+    head.querySelector('[data-action="lock"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      sec.locked = !sec.locked;
+      render();
+    });
+    head.addEventListener('click', () => {
+      secEl.classList.toggle('collapsed');
+    });
+    secEl.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'sec-body';
+
+    const linesWrap = document.createElement('div');
+    linesWrap.className = 'lines';
+
+    sec.lines.forEach((line) => {
+      const row = document.createElement('div');
+      row.className = `line-row state-${line.status}`;
+
+      const marker = document.createElement('div');
+      marker.className = 'marker';
+      marker.title = 'Cycle status';
+      marker.addEventListener('click', () => {
+        if (sec.locked) return;
+        const order = ['keep','flag','cut'];
+        line.status = order[(order.indexOf(line.status) + 1) % 3];
+        render();
+        updateStats();
+      });
+
+      const textEl = document.createElement('div');
+      textEl.className = 'lyric-text' + (line.type === 'paren' ? ' parenthetical' : '') + (line.type === 'spec' ? ' spec' : '');
+      textEl.contentEditable = !sec.locked;
+      textEl.spellcheck = false;
+      textEl.textContent = line.text;
+      textEl.addEventListener('input', () => {
+        line.text = textEl.textContent;
+        updateStats();
+      });
+      textEl.addEventListener('blur', () => {
+        line.text = textEl.textContent.trim();
+      });
+
+      row.appendChild(marker);
+      row.appendChild(textEl);
+      linesWrap.appendChild(row);
+    });
+
+    body.appendChild(linesWrap);
+
+    const notesWrap = document.createElement('div');
+    notesWrap.className = 'sec-notes';
+    notesWrap.innerHTML = `<label>Section notes</label>`;
+    const notesArea = document.createElement('textarea');
+    notesArea.placeholder = 'e.g. tighten the middle four lines, this section is coasting…';
+    notesArea.value = sec.note;
+    notesArea.disabled = sec.locked;
+    notesArea.addEventListener('input', () => { sec.note = notesArea.value; });
+    notesWrap.appendChild(notesArea);
+    body.appendChild(notesWrap);
+
+    secEl.appendChild(body);
+    main.appendChild(secEl);
+  });
+}
+
+function updateStats(){
+  let total = 0, flagged = 0, cut = 0;
+  state.forEach(sec => sec.lines.forEach(l => {
+    total++;
+    if (l.status === 'flag') flagged++;
+    if (l.status === 'cut') cut++;
+  }));
+  document.getElementById('stats').innerHTML =
+    `<span><b>${total}</b> lines</span>` +
+    `<span><b>${flagged}</b> flagged</span>` +
+    `<span><b>${cut}</b> cut</span>`;
+}
+
+function buildFinalText(includeNotes){
+  let out = [];
+  state.forEach(sec => {
+    const keepLines = sec.lines.filter(l => l.status !== 'cut');
+    if (!keepLines.length && !(includeNotes && sec.note.trim())) return;
+    out.push(`[${sec.tag}${sec.fn ? ' - ' + sec.fn : ''}]`);
+    keepLines.forEach(l => {
+      const mark = includeNotes && l.status === 'flag' ? '  ⚠' : '';
+      out.push(l.text + mark);
+    });
+    if (includeNotes && sec.note.trim()){
+      out.push(`NOTE: ${sec.note.trim()}`);
+    }
+    out.push('');
+  });
+  return out.join('\n').trim() + '\n';
+}
+
+function buildSessionText(){
+  let out = [];
+  state.forEach(sec => {
+    out.push(`[${sec.tag}${sec.fn ? ' - ' + sec.fn : ''}]`);
+    sec.lines.forEach(l => {
+      const status = l.status.toUpperCase().padEnd(5, ' ');
+      const specTag = l.type === 'spec' ? ' #spec' : '';
+      out.push(`${status} ${l.text}${specTag}`);
+    });
+    if (sec.note.trim()) out.push(`NOTE: ${sec.note.trim()}`);
+    out.push('');
+  });
+  return out.join('\n').trim() + '\n';
+}
+
+function parseImportText(raw){
+  const lines = raw.replace(/\r\n/g, '\n').split('\n');
+  const sections = [];
+  let current = null;
+
+  const headerRe = /^\[(.+?)\]$/;
+  const statusRe = /^(KEEP|FLAG|CUT)\s+(.*)$/i;
+  const noteRe = /^NOTE:\s*(.*)$/i;
+
+  lines.forEach(raw_line => {
+    const line = raw_line.trim();
+    if (!line) return;
+
+    const headerMatch = line.match(headerRe);
+    if (headerMatch){
+      const inner = headerMatch[1];
+      const dashIdx = inner.indexOf(' - ');
+      const tag = dashIdx === -1 ? inner.trim() : inner.slice(0, dashIdx).trim();
+      const fn = dashIdx === -1 ? '' : inner.slice(dashIdx + 3).trim();
+      const specSection = /drone|tech bridge/i.test(tag);
+      current = { tag, fn, spec: specSection, locked: false, note: '', lines: [] };
+      sections.push(current);
+      return;
+    }
+
+    if (!current){
+      current = { tag: `Section ${sections.length + 1}`, fn: '', spec: false, locked: false, note: '', lines: [] };
+      sections.push(current);
+    }
+
+    const noteMatch = line.match(noteRe);
+    if (noteMatch){
+      current.note = current.note ? current.note + ' ' + noteMatch[1] : noteMatch[1];
+      return;
+    }
+
+    const statusMatch = line.match(statusRe);
+    let status = 'keep';
+    let text = line;
+    if (statusMatch){
+      status = statusMatch[1].toLowerCase();
+      text = statusMatch[2];
+    } else {
+      const flagStrip = text.match(/^(.*?)\s*⚠\s*$/);
+      if (flagStrip){ status = 'flag'; text = flagStrip[1]; }
+    }
+
+    let type = 'normal';
+    const specStrip = text.match(/^(.*?)\s*#spec\s*$/);
+    if (specStrip){ type = 'spec'; text = specStrip[1]; }
+    else if (/^\(.*\)$/.test(text)) type = 'paren';
+    else if (current.spec) type = 'spec';
+
+    current.lines.push({ text: text.trim(), type, status });
+  });
+
+  return sections.filter(s => s.lines.length || s.note);
+}
+
+function loadSections(parsedSections){
+  state = parsedSections.map((sec, si) => ({
+    tag: sec.tag,
+    fn: sec.fn || '',
+    spec: !!sec.spec,
+    locked: false,
+    note: sec.note || '',
+    lines: sec.lines.map((l, li) => ({
+      id: `${si}-${li}`,
+      text: l.text,
+      type: l.type || 'normal',
+      status: l.status || 'keep'
+    }))
+  }));
+  render();
+  updateStats();
+}
+
+/* ---------- footer actions ---------- */
+document.getElementById('startOverBtn').addEventListener('click', () => {
+  if (state.length && !confirm('Clear everything currently loaded? Save a session first if you want to keep it.')) return;
+  state = [];
+  render();
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const text = buildFinalText(true);
+  const btn = document.getElementById('copyBtn');
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  btn.textContent = 'Copied ✓';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'Copy for chat (lyric + notes)'; btn.classList.remove('copied'); }, 1600);
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const text = buildFinalText(true);
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'timesong.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('saveSessionBtn').addEventListener('click', async () => {
+  const text = buildSessionText();
+  const btn = document.getElementById('saveSessionBtn');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = 'Session copied ✓';
+  } catch (e) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'timesong_session.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = 'Downloaded ✓';
+  }
+  setTimeout(() => { btn.textContent = 'Save session'; }, 1600);
+});
+
+/* ---------- import modal ---------- */
+const importOverlay = document.getElementById('importOverlay');
+const importArea = document.getElementById('importArea');
+const importStatus = document.getElementById('importStatus');
+
+function openImport(){
+  importArea.value = '';
+  importStatus.textContent = '';
+  importStatus.className = 'modal-status';
+  importOverlay.classList.add('open');
+  importArea.focus();
+}
+document.getElementById('importBtn').addEventListener('click', openImport);
+document.getElementById('importCancel').addEventListener('click', () => importOverlay.classList.remove('open'));
+importOverlay.addEventListener('click', (e) => { if (e.target === importOverlay) importOverlay.classList.remove('open'); });
+
+document.getElementById('importLoad').addEventListener('click', () => {
+  const raw = importArea.value;
+  if (!raw.trim()){
+    importStatus.textContent = 'Paste something first.';
+    importStatus.className = 'modal-status err';
+    return;
+  }
+  let parsed;
+  try { parsed = parseImportText(raw); } catch (e) { parsed = []; }
+  if (!parsed.length){
+    importStatus.textContent = "Couldn't find any lines to import — check the paste.";
+    importStatus.className = 'modal-status err';
+    return;
+  }
+  loadSections(parsed);
+  importOverlay.classList.remove('open');
+});
+
+/* ---------- generate modal: embedded fallback + shared source resolution ---------- */
+const genOverlay = document.getElementById('genOverlay');
+
+// List the files you want available. Each is expected at ./songs/<name>
+// as plain lyric text or a "Save session" dump.
+const SONG_FILES = [
+  { name: 'Fold the Map', file: 'fold_the_map.txt' },
+];
+
+// Fallback used for BOTH Generate and Load whenever nothing in songs/ is reachable
+// (empty folder, missing folder, or this file not being served from a real path).
+const EMBEDDED_SONG_TEXT = `[Drone - sparse, chant]
+MapSheetRippleHelix.
+SigmaDimensionHidden.
+DefaultPathMostProbable.
+TenYearWavelength.
+AlignmentWindows.
+FoldCrossesGap.
+
+[Opening - minimal]
+You drew a map.
+Height disappeared.
+Three into two.
+We do this all the time—
+(Take what is and make it smaller.)
+
+[Verse 1 - building]
+You drew the town in lines
+Then folded up the sky
+Height got tucked away
+Just a point will suffice
+My path circles back every day
+Coffee cup, bus stop, rain
+But plot the way against the clock
+And it turns into a spiral
+(A helix, not a chain.)
+
+[Pre-Chorus]
+Same steps, different hour
+Same door, different key
+I feel the hidden bend
+Pulling quietly
+
+[Chorus - drop]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+
+[Verse 2 - bass heavy]
+The world walks one sure road
+Most days stay near the line
+Entropy pulls toward the probable
+Leaning hard on what must happen
+But every crooked turn
+Every step away
+Leaves a mark in the geometry
+A ripple in the hours
+(A shadow in its place)
+
+[Diatribe 1 - building]
+Listen. The question I often hear:
+"How do I cross the years?"
+The answer is not speed.
+It is not power.
+The answer is: alignment.
+Days both far-off and near-at-hand
+Are separated by the full climb of the wave.
+That is true. The math does not lie.
+But somewhere in the geometry—
+(and this is where the numbers fold)—
+Two moments sit nearly opposite each other
+Across a narrow gap.
+The decades make their own pattern.
+Years rise like a wave.
+And if you wait—
+(if you can wait)—
+The window comes.
+
+[Verse 3 - rising]
+Not a race, not a leap
+Just a fold in the seam
+Some far-off year is near
+When the ripples align—
+I wait for the window
+When the goal is nearest mine
+Then I slip through the passage
+Through the geometry of time
+
+[Diatribe 2 - peak, build-up]
+Friends.
+Do you hear what this means?
+Time travel is not about duration.
+It is not about how many years stand in your way.
+It is about alignment.
+The calendar is a false measure.
+The geometry is the truth.
+Distance through time is not time.
+Distance through time is shape.
+And we are living on the shape.
+Every day, on the ripples.
+Waiting only for the fold.
+For the passage to align.
+For the window.
+
+[Tech Bridge 2 - rushed, urgent, contralto underneath]
+The universe is not a line. The universe is a corrugated sheet. Ripple holds the decade, arrow runs downhill, Local moments punch it, pinch it, hold it still. Where the amplitude shrinks, far turns near—
+Fold through the bulk. Not the line.
+Not speed. Geometry.
+Five-dimensional manifold, M5. Sigma sets the bend.
+Confining potential: U-naught, sigma plus one-over-sigma, minus two. Holds the throat.
+Focusing equation zeroes at the conjugate point. The throat forms.
+Past threshold, self-sourced, the fold emerges.
+Bulk arrival precedes surface arrival. Reachable set expands.
+Time travel: established.
+
+[Chorus - final, evolved]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+Fold the map
+Fold the map
+Let the hidden paths unpack
+Fold the map
+Fold the map
+I was locked in the calendar
+Now I reed the ripples
+(Back, back)
+
+[Outro - slow, meditative]
+The window comes when alignment speaks.
+The fold opens where the ripples meet.
+I was ignorant of the geometry.
+Now I am a traveller.
+Fold the map.
+Fold the map.
+Fold the map.
+`;
+
+// Tries each file in songs/, in order. Returns { text, source } for the first
+// one that loads, or the embedded fallback if none do.
+async function resolveASong(){
+  for (const song of SONG_FILES){
+    try {
+      const res = await fetch('./songs/' + song.file);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.trim()) return { text, source: 'folder: ' + song.file };
+    } catch (e) { /* try next */ }
+  }
+  return { text: EMBEDDED_SONG_TEXT, source: 'embedded (songs/ was empty or unreachable)' };
+}
+
+// Tries every file in songs/, returns whichever load, plus a flag for whether
+// the folder produced anything at all.
+async function resolveAllSongTexts(){
+  const texts = [];
+  for (const song of SONG_FILES){
+    try {
+      const res = await fetch('./songs/' + song.file);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.trim()) texts.push(text);
+    } catch (e) { /* skip */ }
+  }
+  if (texts.length) return { texts, source: 'folder' };
+  return { texts: [EMBEDDED_SONG_TEXT], source: 'embedded (songs/ was empty or unreachable)' };
+}
+
+function openGenerate(){
+  mkStatus.textContent = '';
+  mkStatus.className = 'modal-status';
+  mkOutput.value = '';
+  genOverlay.classList.add('open');
+}
+
+document.getElementById('landingGenerate') && document.getElementById('landingGenerate').addEventListener('click', openGenerate);
+document.getElementById('genFooterBtn').addEventListener('click', openGenerate);
+document.getElementById('genCancel').addEventListener('click', () => genOverlay.classList.remove('open'));
+genOverlay.addEventListener('click', (e) => { if (e.target === genOverlay) genOverlay.classList.remove('open'); });
+
+/* ---------- markov chain generator ---------- */
+function stripCorpusLine(line){
+  const t = line.trim();
+  if (!t) return null;
+  if (/^\[.+\]$/.test(t)) return null;
+  if (/^NOTE:/i.test(t)) return null;
+  let cleaned = t.replace(/^(KEEP|FLAG|CUT)\s+/i, '');
+  cleaned = cleaned.replace(/\s*#spec\s*$/i, '').replace(/\s*⚠\s*$/, '');
+  return cleaned.trim();
+}
+
+function textToCorpusLines(text){
+  const lines = [];
+  text.split('\n').forEach(raw => {
+    const cleaned = stripCorpusLine(raw);
+    if (cleaned){
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      if (words.length) lines.push(words);
+    }
+  });
+  return lines;
+}
+
+function buildMarkovModel(corpusLines, order){
+  const tokens = [];
+  corpusLines.forEach(words => { tokens.push(...words, '\n'); });
+
+  const model = {};
+  for (let i = 0; i + order < tokens.length; i++){
+    const key = tokens.slice(i, i + order).join(' ');
+    const next = tokens[i + order];
+    if (!model[key]) model[key] = [];
+    model[key].push(next);
+  }
+  return { model, tokens };
+}
+
+function generateMarkovLines(corpusLines, order, targetLines){
+  if (!corpusLines.length) return null;
+  const { model } = buildMarkovModel(corpusLines, order);
+  const keys = Object.keys(model).filter(k => !/^\n/.test(k) && k.trim());
+  if (!keys.length) return null;
+
+  let out = [...keys[Math.floor(Math.random() * keys.length)].split(' ')];
+  const maxTokens = targetLines * 40 + 100;
+  let lineCount = out.filter(t => t === '\n').length;
+
+  while (lineCount < targetLines && out.length < maxTokens){
+    const key = out.slice(-order).join(' ');
+    let choices = model[key];
+    if (!choices || !choices.length){
+      out.push(...keys[Math.floor(Math.random() * keys.length)].split(' '));
+      lineCount = out.filter(t => t === '\n').length;
+      continue;
+    }
+    const next = choices[Math.floor(Math.random() * choices.length)];
+    out.push(next);
+    if (next === '\n') lineCount++;
+  }
+
+  const resultLines = [];
+  let buf = [];
+  out.forEach(tok => {
+    if (tok === '\n'){
+      if (buf.length){ resultLines.push(buf.join(' ')); buf = []; }
+    } else {
+      buf.push(tok);
+    }
+  });
+  if (buf.length) resultLines.push(buf.join(' '));
+
+  return resultLines
+    .filter(l => l.trim())
+    .slice(0, targetLines)
+    .map(l => l.charAt(0).toUpperCase() + l.slice(1));
+}
+
+const mkWeird = document.getElementById('mkWeird');
+const mkWeirdLabel = document.getElementById('mkWeirdLabel');
+const mkLines = document.getElementById('mkLines');
+const mkLengthLabel = document.getElementById('mkLengthLabel');
+const mkOutput = document.getElementById('mkOutput');
+const mkStatus = document.getElementById('mkStatus');
+const WEIRD_LABELS = { 1: 'Low', 2: 'Medium', 3: 'High' };
+
+mkWeird.addEventListener('input', () => {
+  mkWeirdLabel.textContent = WEIRD_LABELS[mkWeird.value];
+});
+mkLines.addEventListener('input', () => {
+  mkLengthLabel.textContent = mkLines.value + ' lines';
+});
+
+// weirdness 1 (low) -> order 3 (tight/derivative); weirdness 3 (high) -> order 1 (loose/chaotic)
+function orderFromWeirdness(w){ return 4 - parseInt(w, 10); }
+
+document.getElementById('mkGenerateBtn').addEventListener('click', async () => {
+  if (state.length && !confirm('Generate starts a brand-new song and replaces what\'s currently loaded. Save a session first if you want to keep it. Continue?')) return;
+
+  mkStatus.textContent = 'Reading source…';
+  mkStatus.className = 'modal-status';
+  mkOutput.value = '';
+
+  const { texts, source } = await resolveAllSongTexts();
+  const corpus = texts.flatMap(textToCorpusLines);
+  if (!corpus.length){
+    mkStatus.textContent = 'No usable text found to generate from.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+
+  const order = orderFromWeirdness(mkWeird.value);
+  const target = Math.max(4, Math.min(40, parseInt(mkLines.value, 10) || 8));
+  const result = generateMarkovLines(corpus, order, target);
+  if (!result || !result.length){
+    mkStatus.textContent = 'Not enough material to generate from.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+
+  mkOutput.value = result.join('\n');
+
+  // Generating always starts a fresh new song — it never appends onto
+  // whatever happens to already be loaded in the editor.
+  state = [{
+    tag: 'Generated',
+    fn: `markov, weirdness ${WEIRD_LABELS[mkWeird.value].toLowerCase()}`,
+    spec: false,
+    locked: false,
+    note: '',
+    lines: result.map((text, li) => ({
+      id: `0-${li}`,
+      text,
+      type: /^\(.*\)$/.test(text) ? 'paren' : 'normal',
+      status: 'keep'
+    }))
+  }];
+  render();
+  updateStats();
+
+  mkStatus.textContent = `New song generated from ${source}.`;
+  mkStatus.className = 'modal-status ok';
+});
+
+document.getElementById('mkLoadBtn').addEventListener('click', async () => {
+  mkStatus.textContent = 'Loading…';
+  mkStatus.className = 'modal-status';
+  const { text, source } = await resolveASong();
+  const parsed = parseImportText(text);
+  if (!parsed.length){
+    mkStatus.textContent = 'Nothing parseable found.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+  loadSections(parsed);
+  mkStatus.textContent = `Loaded from ${source}.`;
+  mkStatus.className = 'modal-status ok';
+  genOverlay.classList.remove('open');
+});
+
+render();
+</script>
+</body>
+</html>
