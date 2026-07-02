@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fold the Map — Editing Console</title>
+<title>Timesong Editor</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -252,6 +252,63 @@ main{max-width:840px;margin:0 auto;padding:20px 24px 0;}
 .sec-notes textarea:focus{border-color:var(--cyan-dim);color:var(--text);}
 .sec-notes textarea::placeholder{color:var(--text-faint);}
 
+/* ---------- landing ---------- */
+.landing{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 24px 80px;
+  gap:22px;
+}
+.landing-icon{opacity:.5;}
+.landing h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:19px;
+  font-weight:600;
+  color:var(--text);
+  margin:0;
+}
+.landing p{
+  color:var(--text-mute);
+  font-size:14px;
+  max-width:44ch;
+  line-height:1.6;
+  margin:0;
+}
+.landing-choices{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:8px;
+}
+.choice-card{
+  width:220px;
+  padding:22px 18px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  cursor:pointer;
+  transition:all .15s;
+  text-align:left;
+}
+.choice-card:hover{border-color:var(--cyan-dim);transform:translateY(-2px);}
+.choice-card .ctitle{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;
+  font-size:14.5px;
+  color:var(--cyan);
+  margin-bottom:6px;
+}
+.choice-card.gen .ctitle{color:var(--amber);}
+.choice-card .cdesc{
+  font-size:12.5px;
+  color:var(--text-mute);
+  line-height:1.5;
+}
+
 /* ---------- footer ---------- */
 footer{
   position:fixed;
@@ -276,7 +333,7 @@ footer{
   flex-wrap:wrap;
 }
 .stats b{color:var(--text);font-weight:600;}
-.footer-btns{display:flex;gap:10px;}
+.footer-btns{display:flex;gap:10px;flex-wrap:wrap;}
 button.action{
   font-family:'Space Grotesk',sans-serif;
   font-size:13px;
@@ -291,6 +348,7 @@ button.action{
   transition:all .15s;
 }
 button.action:hover{color:var(--text);border-color:var(--text-mute);}
+button.action:disabled{opacity:.5;cursor:default;}
 button.primary{
   background:linear-gradient(135deg, rgba(94,233,255,0.14), rgba(94,233,255,0.06));
   border-color:var(--cyan-dim);
@@ -305,7 +363,7 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
   .footer-btns{justify-content:center;}
 }
 
-/* ---------- import modal ---------- */
+/* ---------- modal ---------- */
 .overlay{
   position:fixed;inset:0;
   background:rgba(6,8,12,0.72);
@@ -333,6 +391,7 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
   margin:0;
   color:var(--cyan);
 }
+.modal.gen h2{color:var(--amber);}
 .modal p{
   margin:0;
   font-size:13px;
@@ -353,6 +412,11 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
   resize:vertical;
   outline:none;
 }
+.modal.gen textarea{
+  font-family:'Fraunces',serif;
+  font-size:14px;
+  min-height:140px;
+}
 .modal textarea:focus{border-color:var(--cyan-dim);}
 .modal-btns{display:flex;justify-content:flex-end;gap:10px;}
 .modal-status{
@@ -363,21 +427,35 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
 }
 .modal-status.err{color:var(--red);}
 .modal-status.ok{color:var(--cyan);}
+.song-item{
+  text-align:left;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--line-soft);
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13.5px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.song-item:hover{border-color:var(--amber-dim);}
+.song-item:disabled{opacity:.5;cursor:default;}
 </style>
 </head>
 <body>
 
 <header>
   <div class="eyebrow">Editing Console · Live Pass</div>
-  <h1>Fold the <span>Map</span></h1>
-  <div class="sub">Click a marker to cycle a line through <b style="color:var(--cyan)">keep</b> → <b style="color:var(--amber)">flag</b> → <b style="color:var(--red)">cut</b>. Click any line's text to edit it directly. Notes live per-section below the lines.</div>
+  <h1>Timesong <span>Editor</span></h1>
+  <div class="sub" id="subtext">Click a marker to cycle a line through keep → flag → cut. Click any line's text to edit it directly. Notes live per-section below the lines.</div>
   <svg class="wave" viewBox="0 0 800 26" preserveAspectRatio="none">
     <path d="M0,13 C50,2 100,24 150,13 C200,2 250,24 300,13 C350,2 400,24 450,13 C500,2 550,24 600,13 C650,2 700,24 750,13 C775,7 800,19 800,13"
       fill="none" stroke="#5ee9ff" stroke-width="1" opacity="0.5"/>
   </svg>
 </header>
 
-<div class="legend">
+<div class="legend" id="legend" style="display:none;">
   <span class="item"><span class="dot keep"></span> keep</span>
   <span class="item"><span class="dot flag"></span> flag — needs a look</span>
   <span class="item"><span class="dot cut"></span> cut — excluded from export</span>
@@ -385,11 +463,12 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
 
 <main id="main"></main>
 
-<footer>
+<footer id="footer" style="display:none;">
   <div class="stats" id="stats"></div>
   <div class="footer-btns">
-    <button class="action" id="resetBtn">Reset to original</button>
+    <button class="action" id="startOverBtn">Start over</button>
     <button class="action" id="importBtn">Import lyric</button>
+    <button class="action" id="genFooterBtn">Generate</button>
     <button class="action" id="saveSessionBtn">Save session</button>
     <button class="action primary" id="copyBtn">Copy for chat (lyric + notes)</button>
     <button class="action" id="downloadBtn">Download .txt</button>
@@ -409,186 +488,82 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
   </div>
 </div>
 
-<script>
-// ---------- data ----------
-const SECTIONS = [
-  { tag: "Drone", fn: "sparse, chant", spec:true, lines: [
-    {t:"MapSheetRippleHelix.", type:"spec"},
-    {t:"SigmaDimensionHidden.", type:"spec"},
-    {t:"DefaultPathMostProbable.", type:"spec"},
-    {t:"TenYearWavelength.", type:"spec"},
-    {t:"AlignmentWindows.", type:"spec"},
-    {t:"FoldCrossesGap.", type:"spec"},
-  ]},
-  { tag: "Opening", fn: "minimal", lines: [
-    {t:"You drew a map."},
-    {t:"Height disappeared."},
-    {t:"Three into two."},
-    {t:"We do this all the time—"},
-    {t:"(Take what is and make it smaller.)", type:"paren"},
-  ]},
-  { tag: "Verse 1", fn: "building", lines: [
-    {t:"You drew the town in lines"},
-    {t:"Then folded up the sky"},
-    {t:"Height got tucked away"},
-    {t:"Just a point will suffice"},
-    {t:"My day keeps circling back"},
-    {t:"Coffee cup, bus stop, rain"},
-    {t:"But put a clock beside the street"},
-    {t:"And it turns into a spiral—"},
-    {t:"(A helix. Not a chain.)", type:"paren"},
-    {t:"(The place comes round again. Never the hour.)", type:"paren"},
-  ]},
-  { tag: "Pre-Chorus", lines: [
-    {t:"Same steps, different hour"},
-    {t:"Same door, different key"},
-    {t:"I feel the hidden bend"},
-    {t:"Pulling quietly"},
-  ]},
-  { tag: "Chorus", fn: "drop", lines: [
-    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
-    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
-    {t:"(Back, back)", type:"paren"},
-  ]},
-  { tag: "Verse 2", fn: "bass heavy", lines: [
-    {t:"The world walks one sure road"},
-    {t:"Most days stay near the line"},
-    {t:"Entropy—not soft, not hand-held—"},
-    {t:"Entropy that pulls toward the probable"},
-    {t:"Leaning hard on what must happen"},
-    {t:"But every deviation—"},
-    {t:"Every strange and unsanctioned step—"},
-    {t:"Leaves a mark in the geometry"},
-    {t:"A ripple in the hours"},
-    {t:"A shadow in its place"},
-  ]},
-  { tag: "Pre-Chorus", lines: [
-    {t:"Same steps, different hour"},
-    {t:"Same door, different key"},
-    {t:"I feel the hidden bend"},
-    {t:"Pulling quietly"},
-  ]},
-  { tag: "Chorus", lines: [
-    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
-    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
-    {t:"(Back, back)", type:"paren"},
-  ]},
-  { tag: "Diatribe 1", fn: "building", lines: [
-    {t:"Listen. The question that I often hear:"},
-    {t:"\u201cHow do I cross the years?\u201d"},
-    {t:"The answer is not Speed."},
-    {t:"It is not Power."},
-    {t:"The answer is: Alignment."},
-    {t:"Most days far-off and near-at-hand"},
-    {t:"Are separated by the full climb of the wave."},
-    {t:"That is true. The math does not lie."},
-    {t:"But somewhere in the geometry—"},
-    {t:"(and this is where the numbers break open)—", type:"paren"},
-    {t:"Two moments sit nearly opposite each other"},
-    {t:"Across a narrow gap."},
-    {t:"The decade makes its own pattern."},
-    {t:"Ten years like a wave."},
-    {t:"And if you wait—"},
-    {t:"(if you can wait)—", type:"paren"},
-    {t:"The window comes."},
-  ]},
-  { tag: "Tech Bridge 1", fn: "rushed, urgent, specification", spec:true, lines: [
-    {t:"Now the scripture—"},
-    {t:"I say scripture because this is how the geometry declares itself—"},
-    {t:"Five-dimensional manifold M5.", type:"spec"},
-    {t:"Coordinates x, y, z, t, sigma.", type:"spec"},
-    {t:"Fold metric with warp functions A, B, C.", type:"spec"},
-    {t:"Confining potential U(sigma): U-naught times sigma plus one-over-sigma minus two.", type:"spec"},
-    {t:"Equilibrium sigma-star equals one.", type:"spec"},
-    {t:"Effective mass m-squared-sigma equals two U-naught over Lambda-cubed.", type:"spec"},
-    {t:"Einstein equations: G-M-N equals kappa T-M-N.", type:"spec"},
-    {t:"Throat equation: partial-squared-sigma B equals negative kappa rho.", type:"spec"},
-    {t:"Positive energy density forces geometric focusing.", type:"spec"},
-    {t:"Focusing equation: partial-squared W equals negative kappa rho W.", type:"spec"},
-    {t:"W acquires a zero—conjugate point, focal point, throat.", type:"spec"},
-    {t:"The pinch forms.", type:"spec"},
-    {t:"Self-sourcing threshold: tau-one-critical equals two square-root two-U-naught Lambda-cubed.", type:"spec"},
-    {t:"Past threshold the fold emerges.", type:"spec"},
-    {t:"Established.", type:"spec"},
-    {t:"Causal shortcut: bulk arrival precedes surface arrival.", type:"spec"},
-    {t:"Reachable set bulk contains surface reachable set.", type:"spec"},
-    {t:"Time travel established.", type:"spec"},
-  ]},
-  { tag: "Verse 3", fn: "rising", lines: [
-    {t:"Not a race, not a leap"},
-    {t:"Just a fold in the seam"},
-    {t:"Some far-off year is near"},
-    {t:"When the ripples align—"},
-    {t:"I wait for the window"},
-    {t:"When the goal is nearest mine"},
-    {t:"Then I slip through the passage"},
-    {t:"Through the geometry of time"},
-  ]},
-  { tag: "Diatribe 2", fn: "peak, build-up", lines: [
-    {t:"Friends."},
-    {t:"Do you hear what this means?"},
-    {t:"Time travel is not about duration."},
-    {t:"It is not about how many years stand in your way."},
-    {t:"It is about alignment."},
-    {t:"The calendar is a false measure."},
-    {t:"The geometry is the truth."},
-    {t:"Distance through time is not time."},
-    {t:"Distance through time is shape."},
-    {t:"And we are living on the shape."},
-    {t:"Every day, on the ripples."},
-    {t:"Waiting only for the fold."},
-    {t:"For the passage to align."},
-    {t:"For the window."},
-  ]},
-  { tag: "Tech Bridge 2", fn: "rushed, urgent, contralto underneath", spec:true, lines: [
-    {t:"The substrate has three voices—"},
-    {t:"The ripple itself.", type:"spec"},
-    {t:"Decade height.", type:"spec"},
-    {t:"Weeks-to-days period.", type:"spec"},
-    {t:"Follow the surface: ten years up, ten years down.", type:"spec"},
-    {t:"But the arrow beneath—entropy always downhill.", type:"spec"},
-    {t:"The slope was steep in the past, gentle now.", type:"spec"},
-    {t:"Local moments—bright, structured, known—punch down into the ripple.", type:"spec"},
-    {t:"Pinch it.", type:"spec"},
-    {t:"Where the amplitude shrinks, two moments far apart on the surface sit close in the bulk.", type:"spec"},
-    {t:"The null path through the higher dimension is shorter than any surface path.", type:"spec"},
-    {t:"You do not climb the wave.", type:"spec"},
-    {t:"You fold through the gap.", type:"spec"},
-    {t:"You arrive in less time.", type:"spec"},
-    {t:"Not speed. Geometry.", type:"spec"},
-    {t:"The window opens when phase aligns and the ripple is pinched.", type:"spec"},
-  ]},
-  { tag: "Chorus", fn: "final, evolved", lines: [
-    {t:"Fold the map"},{t:"Fold the map"},{t:"I can cross the gap"},
-    {t:"Fold the map"},{t:"Fold the map"},{t:"One turn, then I'm back"},
-    {t:"(Back, back)", type:"paren"},
-    {t:"Fold the map"},{t:"Fold the map"},{t:"Let the hidden paths unpack"},
-    {t:"Fold the map"},{t:"Fold the map"},{t:"I was lost in the calendar"},
-    {t:"Now I read the ripples"},
-    {t:"(Back, back)", type:"paren"},
-  ]},
-  { tag: "Outro", fn: "slow, meditative", lines: [
-    {t:"The window comes when alignment speaks."},
-    {t:"The fold opens where the ripples meet."},
-    {t:"I was ignorant of the geometry."},
-    {t:"Now I am a witness."},
-    {t:"Fold the map."},
-    {t:"Fold the map."},
-    {t:"Fold the map."},
-  ]},
-];
+<div class="overlay" id="genOverlay">
+  <div class="modal gen">
+    <h2>Generate</h2>
 
-// deep clone as working state, add ids + status
-let state = SECTIONS.map((sec, si) => ({
-  ...sec,
-  locked: false,
-  note: "",
-  lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, text: l.t, type: l.type || "normal", status: "keep" }))
-}));
+    <div style="display:flex; flex-direction:column; gap:16px; margin-top:6px;">
+      <div>
+        <label style="display:flex; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--text-mute); margin-bottom:6px;">
+          <span>Weirdness</span>
+          <span id="mkWeirdLabel">Medium</span>
+        </label>
+        <input id="mkWeird" type="range" min="1" max="3" step="1" value="2" style="width:100%;">
+      </div>
+      <div>
+        <label style="display:flex; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--text-mute); margin-bottom:6px;">
+          <span>Length</span>
+          <span id="mkLengthLabel">8 lines</span>
+        </label>
+        <input id="mkLines" type="range" min="4" max="40" step="1" value="8" style="width:100%;">
+      </div>
+      <button class="action primary" id="mkGenerateBtn" style="padding:16px; font-size:15px;">Generate</button>
+    </div>
+
+    <textarea id="mkOutput" readonly placeholder="Generated lines will appear here…" style="width:100%; min-height:130px; margin-top:4px; background:var(--line-soft); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:'Fraunces',serif; font-size:14px; padding:10px; resize:vertical;"></textarea>
+    <div class="modal-status" id="mkStatus"></div>
+
+    <div class="modal-btns">
+      <button class="action" id="mkLoadBtn" style="font-size:11px; padding:6px 12px;">Load</button>
+      <button class="action" id="genCancel">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = [];
 
 const main = document.getElementById('main');
+const footer = document.getElementById('footer');
+const legend = document.getElementById('legend');
+const subtext = document.getElementById('subtext');
+
+const EMPTY_SUB = "Start by importing a lyric you already have, or generate a fresh draft to work from.";
+const FULL_SUB = "Click a marker to cycle a line through keep → flag → cut. Click any line's text to edit it directly. Notes live per-section below the lines.";
+
+function renderLanding(){
+  subtext.textContent = EMPTY_SUB;
+  legend.style.display = 'none';
+  footer.style.display = 'none';
+  main.innerHTML = `
+    <div class="landing">
+      <h2>Nothing loaded yet</h2>
+      <p>This console works on a lyric already in progress. Bring one in, or start from a prompt.</p>
+      <div class="landing-choices">
+        <div class="choice-card" id="landingImport">
+          <div class="ctitle">Import Lyric</div>
+          <div class="cdesc">Paste an existing draft or a saved session dump to start editing it line by line.</div>
+        </div>
+        <div class="choice-card gen" id="landingGenerate">
+          <div class="ctitle">Generate</div>
+          <div class="cdesc">Markov-generate new lines, or load a full song, from the songs/ folder (or this file's own built-in lyric).</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('landingImport').addEventListener('click', openImport);
+  document.getElementById('landingGenerate').addEventListener('click', openGenerate);
+}
 
 function render(){
+  if (!state.length){
+    renderLanding();
+    return;
+  }
+  subtext.textContent = FULL_SUB;
+  legend.style.display = 'flex';
+  footer.style.display = 'flex';
+
   main.innerHTML = "";
   state.forEach((sec, si) => {
     const secEl = document.createElement('div');
@@ -672,10 +647,9 @@ function render(){
 }
 
 function updateStats(){
-  let total = 0, kept = 0, flagged = 0, cut = 0;
+  let total = 0, flagged = 0, cut = 0;
   state.forEach(sec => sec.lines.forEach(l => {
     total++;
-    if (l.status === 'keep') kept++;
     if (l.status === 'flag') flagged++;
     if (l.status === 'cut') cut++;
   }));
@@ -689,7 +663,6 @@ function buildFinalText(includeNotes){
   let out = [];
   state.forEach(sec => {
     const keepLines = sec.lines.filter(l => l.status !== 'cut');
-    const flaggedLines = sec.lines.filter(l => l.status === 'flag');
     if (!keepLines.length && !(includeNotes && sec.note.trim())) return;
     out.push(`[${sec.tag}${sec.fn ? ' - ' + sec.fn : ''}]`);
     keepLines.forEach(l => {
@@ -704,8 +677,6 @@ function buildFinalText(includeNotes){
   return out.join('\n').trim() + '\n';
 }
 
-// Lossless dump: every line (including cut), its status, its type, and section notes.
-// This is the format to paste back into Import to restore exact working state.
 function buildSessionText(){
   let out = [];
   state.forEach(sec => {
@@ -780,15 +751,29 @@ function parseImportText(raw){
   return sections.filter(s => s.lines.length || s.note);
 }
 
-document.getElementById('resetBtn').addEventListener('click', () => {
-  state = SECTIONS.map((sec, si) => ({
-    ...sec,
+function loadSections(parsedSections){
+  state = parsedSections.map((sec, si) => ({
+    tag: sec.tag,
+    fn: sec.fn || '',
+    spec: !!sec.spec,
     locked: false,
-    note: "",
-    lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, text: l.t, type: l.type || "normal", status: "keep" }))
+    note: sec.note || '',
+    lines: sec.lines.map((l, li) => ({
+      id: `${si}-${li}`,
+      text: l.text,
+      type: l.type || 'normal',
+      status: l.status || 'keep'
+    }))
   }));
   render();
   updateStats();
+}
+
+/* ---------- footer actions ---------- */
+document.getElementById('startOverBtn').addEventListener('click', () => {
+  if (state.length && !confirm('Clear everything currently loaded? Save a session first if you want to keep it.')) return;
+  state = [];
+  render();
 });
 
 document.getElementById('copyBtn').addEventListener('click', async () => {
@@ -815,7 +800,7 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'fold_the_map.txt';
+  a.download = 'timesong.txt';
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -831,7 +816,7 @@ document.getElementById('saveSessionBtn').addEventListener('click', async () => 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'fold_the_map_session.txt';
+    a.download = 'timesong_session.txt';
     a.click();
     URL.revokeObjectURL(url);
     btn.textContent = 'Downloaded ✓';
@@ -839,23 +824,21 @@ document.getElementById('saveSessionBtn').addEventListener('click', async () => 
   setTimeout(() => { btn.textContent = 'Save session'; }, 1600);
 });
 
+/* ---------- import modal ---------- */
 const importOverlay = document.getElementById('importOverlay');
 const importArea = document.getElementById('importArea');
 const importStatus = document.getElementById('importStatus');
 
-document.getElementById('importBtn').addEventListener('click', () => {
+function openImport(){
   importArea.value = '';
   importStatus.textContent = '';
   importStatus.className = 'modal-status';
   importOverlay.classList.add('open');
   importArea.focus();
-});
-document.getElementById('importCancel').addEventListener('click', () => {
-  importOverlay.classList.remove('open');
-});
-importOverlay.addEventListener('click', (e) => {
-  if (e.target === importOverlay) importOverlay.classList.remove('open');
-});
+}
+document.getElementById('importBtn').addEventListener('click', openImport);
+document.getElementById('importCancel').addEventListener('click', () => importOverlay.classList.remove('open'));
+importOverlay.addEventListener('click', (e) => { if (e.target === importOverlay) importOverlay.classList.remove('open'); });
 
 document.getElementById('importLoad').addEventListener('click', () => {
   const raw = importArea.value;
@@ -865,27 +848,364 @@ document.getElementById('importLoad').addEventListener('click', () => {
     return;
   }
   let parsed;
-  try {
-    parsed = parseImportText(raw);
-  } catch (e) {
-    parsed = [];
-  }
+  try { parsed = parseImportText(raw); } catch (e) { parsed = []; }
   if (!parsed.length){
     importStatus.textContent = "Couldn't find any lines to import — check the paste.";
     importStatus.className = 'modal-status err';
     return;
   }
-  state = parsed.map((sec, si) => ({
-    ...sec,
-    lines: sec.lines.map((l, li) => ({ id: `${si}-${li}`, ...l }))
-  }));
-  render();
-  updateStats();
+  loadSections(parsed);
   importOverlay.classList.remove('open');
 });
 
+/* ---------- generate modal: embedded fallback + shared source resolution ---------- */
+const genOverlay = document.getElementById('genOverlay');
+
+// List the files you want available. Each is expected at ./songs/<name>
+// as plain lyric text or a "Save session" dump.
+const SONG_FILES = [
+  { name: 'Fold the Map', file: 'fold_the_map.txt' },
+];
+
+// Fallback used for BOTH Generate and Load whenever nothing in songs/ is reachable
+// (empty folder, missing folder, or this file not being served from a real path).
+const EMBEDDED_SONG_TEXT = `[Drone - sparse, chant]
+MapSheetRippleHelix.
+SigmaDimensionHidden.
+DefaultPathMostProbable.
+TenYearWavelength.
+AlignmentWindows.
+FoldCrossesGap.
+
+[Opening - minimal]
+You drew a map.
+Height disappeared.
+Three into two.
+We do this all the time—
+(Take what is and make it smaller.)
+
+[Verse 1 - building]
+You drew the town in lines
+Then folded up the sky
+Height got tucked away
+Just a point will suffice
+My path circles back every day
+Coffee cup, bus stop, rain
+But plot the way against the clock
+And it turns into a spiral
+(A helix, not a chain.)
+
+[Pre-Chorus]
+Same steps, different hour
+Same door, different key
+I feel the hidden bend
+Pulling quietly
+
+[Chorus - drop]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+
+[Verse 2 - bass heavy]
+The world walks one sure road
+Most days stay near the line
+Entropy pulls toward the probable
+Leaning hard on what must happen
+But every crooked turn
+Every step away
+Leaves a mark in the geometry
+A ripple in the hours
+(A shadow in its place)
+
+[Diatribe 1 - building]
+Listen. The question I often hear:
+"How do I cross the years?"
+The answer is not speed.
+It is not power.
+The answer is: alignment.
+Days both far-off and near-at-hand
+Are separated by the full climb of the wave.
+That is true. The math does not lie.
+But somewhere in the geometry—
+(and this is where the numbers fold)—
+Two moments sit nearly opposite each other
+Across a narrow gap.
+The decades make their own pattern.
+Years rise like a wave.
+And if you wait—
+(if you can wait)—
+The window comes.
+
+[Verse 3 - rising]
+Not a race, not a leap
+Just a fold in the seam
+Some far-off year is near
+When the ripples align—
+I wait for the window
+When the goal is nearest mine
+Then I slip through the passage
+Through the geometry of time
+
+[Diatribe 2 - peak, build-up]
+Friends.
+Do you hear what this means?
+Time travel is not about duration.
+It is not about how many years stand in your way.
+It is about alignment.
+The calendar is a false measure.
+The geometry is the truth.
+Distance through time is not time.
+Distance through time is shape.
+And we are living on the shape.
+Every day, on the ripples.
+Waiting only for the fold.
+For the passage to align.
+For the window.
+
+[Tech Bridge 2 - rushed, urgent, contralto underneath]
+The universe is not a line. The universe is a corrugated sheet. Ripple holds the decade, arrow runs downhill, Local moments punch it, pinch it, hold it still. Where the amplitude shrinks, far turns near—
+Fold through the bulk. Not the line.
+Not speed. Geometry.
+Five-dimensional manifold, M5. Sigma sets the bend.
+Confining potential: U-naught, sigma plus one-over-sigma, minus two. Holds the throat.
+Focusing equation zeroes at the conjugate point. The throat forms.
+Past threshold, self-sourced, the fold emerges.
+Bulk arrival precedes surface arrival. Reachable set expands.
+Time travel: established.
+
+[Chorus - final, evolved]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+Fold the map
+Fold the map
+Let the hidden paths unpack
+Fold the map
+Fold the map
+I was locked in the calendar
+Now I reed the ripples
+(Back, back)
+
+[Outro - slow, meditative]
+The window comes when alignment speaks.
+The fold opens where the ripples meet.
+I was ignorant of the geometry.
+Now I am a traveller.
+Fold the map.
+Fold the map.
+Fold the map.
+`;
+
+// Tries each file in songs/, in order. Returns { text, source } for the first
+// one that loads, or the embedded fallback if none do.
+async function resolveASong(){
+  for (const song of SONG_FILES){
+    try {
+      const res = await fetch('./songs/' + song.file);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.trim()) return { text, source: 'folder: ' + song.file };
+    } catch (e) { /* try next */ }
+  }
+  return { text: EMBEDDED_SONG_TEXT, source: 'embedded (songs/ was empty or unreachable)' };
+}
+
+// Tries every file in songs/, returns whichever load, plus a flag for whether
+// the folder produced anything at all.
+async function resolveAllSongTexts(){
+  const texts = [];
+  for (const song of SONG_FILES){
+    try {
+      const res = await fetch('./songs/' + song.file);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.trim()) texts.push(text);
+    } catch (e) { /* skip */ }
+  }
+  if (texts.length) return { texts, source: 'folder' };
+  return { texts: [EMBEDDED_SONG_TEXT], source: 'embedded (songs/ was empty or unreachable)' };
+}
+
+function openGenerate(){
+  mkStatus.textContent = '';
+  mkStatus.className = 'modal-status';
+  mkOutput.value = '';
+  genOverlay.classList.add('open');
+}
+
+document.getElementById('landingGenerate') && document.getElementById('landingGenerate').addEventListener('click', openGenerate);
+document.getElementById('genFooterBtn').addEventListener('click', openGenerate);
+document.getElementById('genCancel').addEventListener('click', () => genOverlay.classList.remove('open'));
+genOverlay.addEventListener('click', (e) => { if (e.target === genOverlay) genOverlay.classList.remove('open'); });
+
+/* ---------- markov chain generator ---------- */
+function stripCorpusLine(line){
+  const t = line.trim();
+  if (!t) return null;
+  if (/^\[.+\]$/.test(t)) return null;
+  if (/^NOTE:/i.test(t)) return null;
+  let cleaned = t.replace(/^(KEEP|FLAG|CUT)\s+/i, '');
+  cleaned = cleaned.replace(/\s*#spec\s*$/i, '').replace(/\s*⚠\s*$/, '');
+  return cleaned.trim();
+}
+
+function textToCorpusLines(text){
+  const lines = [];
+  text.split('\n').forEach(raw => {
+    const cleaned = stripCorpusLine(raw);
+    if (cleaned){
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      if (words.length) lines.push(words);
+    }
+  });
+  return lines;
+}
+
+function buildMarkovModel(corpusLines, order){
+  const tokens = [];
+  corpusLines.forEach(words => { tokens.push(...words, '\n'); });
+
+  const model = {};
+  for (let i = 0; i + order < tokens.length; i++){
+    const key = tokens.slice(i, i + order).join(' ');
+    const next = tokens[i + order];
+    if (!model[key]) model[key] = [];
+    model[key].push(next);
+  }
+  return { model, tokens };
+}
+
+function generateMarkovLines(corpusLines, order, targetLines){
+  if (!corpusLines.length) return null;
+  const { model } = buildMarkovModel(corpusLines, order);
+  const keys = Object.keys(model).filter(k => !/^\n/.test(k) && k.trim());
+  if (!keys.length) return null;
+
+  let out = [...keys[Math.floor(Math.random() * keys.length)].split(' ')];
+  const maxTokens = targetLines * 40 + 100;
+  let lineCount = out.filter(t => t === '\n').length;
+
+  while (lineCount < targetLines && out.length < maxTokens){
+    const key = out.slice(-order).join(' ');
+    let choices = model[key];
+    if (!choices || !choices.length){
+      out.push(...keys[Math.floor(Math.random() * keys.length)].split(' '));
+      lineCount = out.filter(t => t === '\n').length;
+      continue;
+    }
+    const next = choices[Math.floor(Math.random() * choices.length)];
+    out.push(next);
+    if (next === '\n') lineCount++;
+  }
+
+  const resultLines = [];
+  let buf = [];
+  out.forEach(tok => {
+    if (tok === '\n'){
+      if (buf.length){ resultLines.push(buf.join(' ')); buf = []; }
+    } else {
+      buf.push(tok);
+    }
+  });
+  if (buf.length) resultLines.push(buf.join(' '));
+
+  return resultLines
+    .filter(l => l.trim())
+    .slice(0, targetLines)
+    .map(l => l.charAt(0).toUpperCase() + l.slice(1));
+}
+
+const mkWeird = document.getElementById('mkWeird');
+const mkWeirdLabel = document.getElementById('mkWeirdLabel');
+const mkLines = document.getElementById('mkLines');
+const mkLengthLabel = document.getElementById('mkLengthLabel');
+const mkOutput = document.getElementById('mkOutput');
+const mkStatus = document.getElementById('mkStatus');
+const WEIRD_LABELS = { 1: 'Low', 2: 'Medium', 3: 'High' };
+
+mkWeird.addEventListener('input', () => {
+  mkWeirdLabel.textContent = WEIRD_LABELS[mkWeird.value];
+});
+mkLines.addEventListener('input', () => {
+  mkLengthLabel.textContent = mkLines.value + ' lines';
+});
+
+// weirdness 1 (low) -> order 3 (tight/derivative); weirdness 3 (high) -> order 1 (loose/chaotic)
+function orderFromWeirdness(w){ return 4 - parseInt(w, 10); }
+
+document.getElementById('mkGenerateBtn').addEventListener('click', async () => {
+  if (state.length && !confirm('Generate starts a brand-new song and replaces what\'s currently loaded. Save a session first if you want to keep it. Continue?')) return;
+
+  mkStatus.textContent = 'Reading source…';
+  mkStatus.className = 'modal-status';
+  mkOutput.value = '';
+
+  const { texts, source } = await resolveAllSongTexts();
+  const corpus = texts.flatMap(textToCorpusLines);
+  if (!corpus.length){
+    mkStatus.textContent = 'No usable text found to generate from.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+
+  const order = orderFromWeirdness(mkWeird.value);
+  const target = Math.max(4, Math.min(40, parseInt(mkLines.value, 10) || 8));
+  const result = generateMarkovLines(corpus, order, target);
+  if (!result || !result.length){
+    mkStatus.textContent = 'Not enough material to generate from.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+
+  mkOutput.value = result.join('\n');
+
+  // Generating always starts a fresh new song — it never appends onto
+  // whatever happens to already be loaded in the editor.
+  state = [{
+    tag: 'Generated',
+    fn: `markov, weirdness ${WEIRD_LABELS[mkWeird.value].toLowerCase()}`,
+    spec: false,
+    locked: false,
+    note: '',
+    lines: result.map((text, li) => ({
+      id: `0-${li}`,
+      text,
+      type: /^\(.*\)$/.test(text) ? 'paren' : 'normal',
+      status: 'keep'
+    }))
+  }];
+  render();
+  updateStats();
+
+  mkStatus.textContent = `New song generated from ${source}.`;
+  mkStatus.className = 'modal-status ok';
+});
+
+document.getElementById('mkLoadBtn').addEventListener('click', async () => {
+  mkStatus.textContent = 'Loading…';
+  mkStatus.className = 'modal-status';
+  const { text, source } = await resolveASong();
+  const parsed = parseImportText(text);
+  if (!parsed.length){
+    mkStatus.textContent = 'Nothing parseable found.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+  loadSections(parsed);
+  mkStatus.textContent = `Loaded from ${source}.`;
+  mkStatus.className = 'modal-status ok';
+  genOverlay.classList.remove('open');
+});
+
 render();
-updateStats();
 </script>
 </body>
 </html>
