@@ -1,4 +1,5 @@
-# Riverboat
+
+# Riverboat Turner <img src="297477180.jpeg" alt="headshot" width="128"/> Traveller, Educator & Chaos Agent
 
 ![smt_bannner](smt_banner.png)
 
