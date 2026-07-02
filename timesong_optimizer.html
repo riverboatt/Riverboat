@@ -126,8 +126,20 @@ main{max-width:840px;margin:0 auto;padding:20px 24px 0;}
   font-weight:400;
   font-style:italic;
   color:var(--text-mute);
-  margin-left:8px;
   font-size:12.5px;
+}
+.title-edit, .instruction-edit{
+  outline:none;
+  border-radius:3px;
+  padding:0 2px;
+}
+.title-edit:focus, .instruction-edit:focus{
+  background:rgba(94,233,255,0.08);
+}
+.instruction-edit:empty::before{
+  content:attr(data-placeholder);
+  color:var(--text-faint);
+  font-style:italic;
 }
 .sec-controls{display:flex;align-items:center;gap:10px;flex:none;}
 .lock-btn{
@@ -475,10 +487,21 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
   </div>
 </footer>
 
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px;">
+    <h2 id="confirmTitle">Confirm</h2>
+    <p id="confirmMsg"></p>
+    <div class="modal-btns">
+      <button class="action" id="confirmNo">Cancel</button>
+      <button class="action primary" id="confirmYes">OK</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="importOverlay">
   <div class="modal">
     <h2>Import lyric</h2>
-    <p>Paste a "Save session" dump to restore exactly where you left off (status, flags, notes all included) — or paste any plain lyric text to load it fresh. This <b>replaces</b> everything currently in the editor.</p>
+    <p>Replaces everything currently loaded.</p>
     <textarea id="importArea" placeholder="Paste here…"></textarea>
     <div class="modal-status" id="importStatus"></div>
     <div class="modal-btns">
@@ -498,7 +521,7 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
           <span>Weirdness</span>
           <span id="mkWeirdLabel">Medium</span>
         </label>
-        <input id="mkWeird" type="range" min="1" max="3" step="1" value="2" style="width:100%;">
+        <input id="mkWeird" type="range" min="1" max="10" step="1" value="5" style="width:100%;">
       </div>
       <div>
         <label style="display:flex; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--text-mute); margin-bottom:6px;">
@@ -513,12 +536,150 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
     <textarea id="mkOutput" readonly placeholder="Generated lines will appear here…" style="width:100%; min-height:130px; margin-top:4px; background:var(--line-soft); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:'Fraunces',serif; font-size:14px; padding:10px; resize:vertical;"></textarea>
     <div class="modal-status" id="mkStatus"></div>
 
-    <div class="modal-btns">
+    <div class="modal-btns" style="align-items:flex-start;">
       <button class="action" id="mkLoadBtn" style="font-size:11px; padding:6px 12px;">Load</button>
-      <button class="action" id="genCancel">Close</button>
+      <button class="action" id="genCancel">Cancel</button>
+      <button class="action primary" id="mkInsertBtn">Insert</button>
     </div>
+    <div id="loadSourceList" style="display:none; flex-direction:column; gap:6px; margin-top:2px;"></div>
   </div>
 </div>
+
+<script type="text/plain" class="embedded-song" data-title="Fold the Map">
+[Drone - sparse, chant]
+MapSheetRippleHelix.
+SigmaDimensionHidden.
+DefaultPathMostProbable.
+TenYearWavelength.
+AlignmentWindows.
+FoldCrossesGap.
+
+[Opening - minimal]
+You drew a map.
+Height disappeared.
+Three into two.
+We do this all the time—
+(Take what is and make it smaller.)
+
+[Verse 1 - building]
+You drew the town in lines
+Then folded up the sky
+Height got tucked away
+Just a point will suffice
+My path circles back every day
+Coffee cup, bus stop, rain
+But plot the way against the clock
+And it turns into a spiral
+(A helix, not a chain.)
+
+[Pre-Chorus]
+Same steps, different hour
+Same door, different key
+I feel the hidden bend
+Pulling quietly
+
+[Chorus - drop]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+
+[Verse 2 - bass heavy]
+The world walks one sure road
+Most days stay near the line
+Entropy pulls toward the probable
+Leaning hard on what must happen
+But every crooked turn
+Every step away
+Leaves a mark in the geometry
+A ripple in the hours
+(A shadow in its place)
+
+[Diatribe 1 - building]
+Listen. The question I often hear:
+"How do I cross the years?"
+The answer is not speed.
+It is not power.
+The answer is: alignment.
+Days both far-off and near-at-hand
+Are separated by the full climb of the wave.
+That is true. The math does not lie.
+But somewhere in the geometry—
+(and this is where the numbers fold)—
+Two moments sit nearly opposite each other
+Across a narrow gap.
+The decades make their own pattern.
+Years rise like a wave.
+And if you wait—
+(if you can wait)—
+The window comes.
+
+[Verse 3 - rising]
+Not a race, not a leap
+Just a fold in the seam
+Some far-off year is near
+When the ripples align—
+I wait for the window
+When the goal is nearest mine
+Then I slip through the passage
+Through the geometry of time
+
+[Diatribe 2 - peak, build-up]
+Friends.
+Do you hear what this means?
+Time travel is not about duration.
+It is not about how many years stand in your way.
+It is about alignment.
+The calendar is a false measure.
+The geometry is the truth.
+Distance through time is not time.
+Distance through time is shape.
+And we are living on the shape.
+Every day, on the ripples.
+Waiting only for the fold.
+For the passage to align.
+For the window.
+
+[Tech Bridge 2 - rushed, urgent, contralto underneath]
+The universe is not a line. The universe is a corrugated sheet. Ripple holds the decade, arrow runs downhill, Local moments punch it, pinch it, hold it still. Where the amplitude shrinks, far turns near—
+Fold through the bulk. Not the line.
+Not speed. Geometry.
+Five-dimensional manifold, M5. Sigma sets the bend.
+Confining potential: U-naught, sigma plus one-over-sigma, minus two. Holds the throat.
+Focusing equation zeroes at the conjugate point. The throat forms.
+Past threshold, self-sourced, the fold emerges.
+Bulk arrival precedes surface arrival. Reachable set expands.
+Time travel: established.
+
+[Chorus - final, evolved]
+Fold the map
+Fold the map
+I can cross the gap
+Fold the map
+Fold the map
+One turn, then I'm back
+(Back, back)
+Fold the map
+Fold the map
+Let the hidden paths unpack
+Fold the map
+Fold the map
+I was locked in the calendar
+Now I reed the ripples
+(Back, back)
+
+[Outro - slow, meditative]
+The window comes when alignment speaks.
+The fold opens where the ripples meet.
+I was ignorant of the geometry.
+Now I am a traveller.
+Fold the map.
+Fold the map.
+Fold the map.
+</script>
 
 <script>
 let state = [];
@@ -528,8 +689,8 @@ const footer = document.getElementById('footer');
 const legend = document.getElementById('legend');
 const subtext = document.getElementById('subtext');
 
-const EMPTY_SUB = "Start by importing a lyric you already have, or generate a fresh draft to work from.";
-const FULL_SUB = "Click a marker to cycle a line through keep → flag → cut. Click any line's text to edit it directly. Notes live per-section below the lines.";
+const EMPTY_SUB = "Import a lyric, or generate one.";
+const FULL_SUB = "Click a marker to cycle keep / flag / cut. Click text to edit.";
 
 function renderLanding(){
   subtext.textContent = EMPTY_SUB;
@@ -537,16 +698,13 @@ function renderLanding(){
   footer.style.display = 'none';
   main.innerHTML = `
     <div class="landing">
-      <h2>Nothing loaded yet</h2>
-      <p>This console works on a lyric already in progress. Bring one in, or start from a prompt.</p>
+      <h2>Nothing loaded</h2>
       <div class="landing-choices">
         <div class="choice-card" id="landingImport">
           <div class="ctitle">Import Lyric</div>
-          <div class="cdesc">Paste an existing draft or a saved session dump to start editing it line by line.</div>
         </div>
         <div class="choice-card gen" id="landingGenerate">
           <div class="ctitle">Generate</div>
-          <div class="cdesc">Markov-generate new lines, or load a full song, from the songs/ folder (or this file's own built-in lyric).</div>
         </div>
       </div>
     </div>
@@ -572,13 +730,63 @@ function render(){
 
     const head = document.createElement('div');
     head.className = 'sec-head';
-    head.innerHTML = `
-      <div class="sec-tag">[${sec.tag}${sec.fn ? ` <span class="fn">— ${sec.fn}</span>` : ''}]</div>
-      <div class="sec-controls">
-        <button class="lock-btn ${sec.locked ? 'locked' : ''}" data-action="lock">${sec.locked ? 'Locked' : 'Lock'}</button>
-        <span class="chevron">▾</span>
-      </div>
+
+    const tagWrap = document.createElement('div');
+    tagWrap.className = 'sec-tag';
+
+    const bracketOpen = document.createElement('span');
+    bracketOpen.textContent = '[';
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'title-edit';
+    titleEl.contentEditable = !sec.locked;
+    titleEl.spellcheck = false;
+    titleEl.textContent = sec.tag;
+    titleEl.addEventListener('click', (e) => e.stopPropagation());
+    titleEl.addEventListener('input', () => { sec.tag = titleEl.textContent; });
+    titleEl.addEventListener('blur', () => {
+      sec.tag = titleEl.textContent.trim() || 'Untitled';
+      render();
+    });
+
+    const sep = document.createElement('span');
+    sep.className = 'fn';
+    sep.textContent = ' — ';
+
+    const fnEl = document.createElement('span');
+    fnEl.className = 'fn instruction-edit';
+    fnEl.contentEditable = !sec.locked;
+    fnEl.spellcheck = false;
+    fnEl.textContent = sec.fn;
+    fnEl.dataset.placeholder = 'add instruction';
+    fnEl.addEventListener('click', (e) => e.stopPropagation());
+    fnEl.addEventListener('input', () => {
+      sec.fn = fnEl.textContent;
+    });
+    fnEl.addEventListener('blur', () => {
+      sec.fn = fnEl.textContent.trim();
+      render();
+    });
+
+    const bracketClose = document.createElement('span');
+    bracketClose.textContent = ']';
+
+    tagWrap.appendChild(bracketOpen);
+    tagWrap.appendChild(titleEl);
+    tagWrap.appendChild(sep);
+    tagWrap.appendChild(fnEl);
+    tagWrap.appendChild(bracketClose);
+
+    const controls = document.createElement('div');
+    controls.className = 'sec-controls';
+    controls.innerHTML = `
+      <button class="lock-btn ${sec.locked ? 'locked' : ''}" data-action="lock">${sec.locked ? 'Locked' : 'Lock'}</button>
+      <span class="chevron">▾</span>
     `;
+
+    head.appendChild(tagWrap);
+    head.appendChild(controls);
+
     head.querySelector('[data-action="lock"]').addEventListener('click', (e) => {
       e.stopPropagation();
       sec.locked = !sec.locked;
@@ -770,14 +978,57 @@ function loadSections(parsedSections){
 }
 
 /* ---------- footer actions ---------- */
-document.getElementById('startOverBtn').addEventListener('click', () => {
-  if (state.length && !confirm('Clear everything currently loaded? Save a session first if you want to keep it.')) return;
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmMsg = document.getElementById('confirmMsg');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo = document.getElementById('confirmNo');
+
+function customConfirm(message){
+  return new Promise((resolve) => {
+    confirmMsg.textContent = message;
+    confirmOverlay.classList.add('open');
+    function cleanup(){
+      confirmOverlay.classList.remove('open');
+      confirmYes.removeEventListener('click', onYes);
+      confirmNo.removeEventListener('click', onNo);
+    }
+    function onYes(){ cleanup(); resolve(true); }
+    function onNo(){ cleanup(); resolve(false); }
+    confirmYes.addEventListener('click', onYes);
+    confirmNo.addEventListener('click', onNo);
+  });
+}
+
+document.getElementById('startOverBtn').addEventListener('click', async () => {
+  if (state.length){
+    const ok = await customConfirm('Clear everything currently loaded? Save a session first if you want to keep it.');
+    if (!ok) return;
+  }
   state = [];
   render();
 });
 
+const MARKUP_EXPLAINER = `⚠ = flagged line, needs a look. NOTE: = author's note for that section. [Tag - descriptor] = section header. Cut lines are omitted.`;
+
+async function fetchAiPreamble(){
+  try {
+    const res = await fetch('./ai.md');
+    if (res.ok){
+      const text = await res.text();
+      if (text.trim()) return text.trim();
+    }
+  } catch (e) {}
+  return 'You are being pasted the current draft of a song. Flagged lines want alternatives, not fixes. Section notes are scoped to that section.';
+}
+
+async function buildChatExport(){
+  const preamble = await fetchAiPreamble();
+  const lyric = buildFinalText(true);
+  return `${preamble}\n\n${MARKUP_EXPLAINER}\n\n${lyric}`;
+}
+
 document.getElementById('copyBtn').addEventListener('click', async () => {
-  const text = buildFinalText(true);
+  const text = await buildChatExport();
   const btn = document.getElementById('copyBtn');
   try {
     await navigator.clipboard.writeText(text);
@@ -858,187 +1109,54 @@ document.getElementById('importLoad').addEventListener('click', () => {
   importOverlay.classList.remove('open');
 });
 
-/* ---------- generate modal: embedded fallback + shared source resolution ---------- */
+/* ---------- generate modal: source resolution ---------- */
 const genOverlay = document.getElementById('genOverlay');
 
-// List the files you want available. Each is expected at ./songs/<name>
-// as plain lyric text or a "Save session" dump.
-const SONG_FILES = [
-  { name: 'Fold the Map', file: 'fold_the_map.txt' },
-  { name: 'Evertide', file: 'evertide.md'},
-];
-
-// Fallback used for BOTH Generate and Load whenever nothing in songs/ is reachable
-// (empty folder, missing folder, or this file not being served from a real path).
-const EMBEDDED_SONG_TEXT = `[Drone - sparse, chant]
-MapSheetRippleHelix.
-SigmaDimensionHidden.
-DefaultPathMostProbable.
-TenYearWavelength.
-AlignmentWindows.
-FoldCrossesGap.
-
-[Opening - minimal]
-You drew a map.
-Height disappeared.
-Three into two.
-We do this all the time—
-(Take what is and make it smaller.)
-
-[Verse 1 - building]
-You drew the town in lines
-Then folded up the sky
-Height got tucked away
-Just a point will suffice
-My path circles back every day
-Coffee cup, bus stop, rain
-But plot the way against the clock
-And it turns into a spiral
-(A helix, not a chain.)
-
-[Pre-Chorus]
-Same steps, different hour
-Same door, different key
-I feel the hidden bend
-Pulling quietly
-
-[Chorus - drop]
-Fold the map
-Fold the map
-I can cross the gap
-Fold the map
-Fold the map
-One turn, then I'm back
-(Back, back)
-
-[Verse 2 - bass heavy]
-The world walks one sure road
-Most days stay near the line
-Entropy pulls toward the probable
-Leaning hard on what must happen
-But every crooked turn
-Every step away
-Leaves a mark in the geometry
-A ripple in the hours
-(A shadow in its place)
-
-[Diatribe 1 - building]
-Listen. The question I often hear:
-"How do I cross the years?"
-The answer is not speed.
-It is not power.
-The answer is: alignment.
-Days both far-off and near-at-hand
-Are separated by the full climb of the wave.
-That is true. The math does not lie.
-But somewhere in the geometry—
-(and this is where the numbers fold)—
-Two moments sit nearly opposite each other
-Across a narrow gap.
-The decades make their own pattern.
-Years rise like a wave.
-And if you wait—
-(if you can wait)—
-The window comes.
-
-[Verse 3 - rising]
-Not a race, not a leap
-Just a fold in the seam
-Some far-off year is near
-When the ripples align—
-I wait for the window
-When the goal is nearest mine
-Then I slip through the passage
-Through the geometry of time
-
-[Diatribe 2 - peak, build-up]
-Friends.
-Do you hear what this means?
-Time travel is not about duration.
-It is not about how many years stand in your way.
-It is about alignment.
-The calendar is a false measure.
-The geometry is the truth.
-Distance through time is not time.
-Distance through time is shape.
-And we are living on the shape.
-Every day, on the ripples.
-Waiting only for the fold.
-For the passage to align.
-For the window.
-
-[Tech Bridge 2 - rushed, urgent, contralto underneath]
-The universe is not a line. The universe is a corrugated sheet. Ripple holds the decade, arrow runs downhill, Local moments punch it, pinch it, hold it still. Where the amplitude shrinks, far turns near—
-Fold through the bulk. Not the line.
-Not speed. Geometry.
-Five-dimensional manifold, M5. Sigma sets the bend.
-Confining potential: U-naught, sigma plus one-over-sigma, minus two. Holds the throat.
-Focusing equation zeroes at the conjugate point. The throat forms.
-Past threshold, self-sourced, the fold emerges.
-Bulk arrival precedes surface arrival. Reachable set expands.
-Time travel: established.
-
-[Chorus - final, evolved]
-Fold the map
-Fold the map
-I can cross the gap
-Fold the map
-Fold the map
-One turn, then I'm back
-(Back, back)
-Fold the map
-Fold the map
-Let the hidden paths unpack
-Fold the map
-Fold the map
-I was locked in the calendar
-Now I reed the ripples
-(Back, back)
-
-[Outro - slow, meditative]
-The window comes when alignment speaks.
-The fold opens where the ripples meet.
-I was ignorant of the geometry.
-Now I am a traveller.
-Fold the map.
-Fold the map.
-Fold the map.
-`;
-
-// Tries each file in songs/, in order. Returns { text, source } for the first
-// one that loads, or the embedded fallback if none do.
-async function resolveASong(){
-  for (const song of SONG_FILES){
-    try {
-      const res = await fetch('songs/' + song.file);
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (text.trim()) return { text, source: 'folder: ' + song.file };
-    } catch (e) { /* try next */ }
-  }
-  return { text: EMBEDDED_SONG_TEXT, source: 'embedded (songs/ was empty or unreachable)' };
+function getEmbeddedSongs(){
+  return Array.from(document.querySelectorAll('script.embedded-song')).map(el => ({
+    name: el.dataset.title || 'Untitled',
+    text: el.textContent
+  }));
 }
 
-// Tries every file in songs/, returns whichever load, plus a flag for whether
-// the folder produced anything at all.
-async function resolveAllSongTexts(){
-  const texts = [];
-  for (const song of SONG_FILES){
-    try {
-      const res = await fetch('songs/' + song.file);
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (text.trim()) texts.push(text);
-    } catch (e) { /* skip */ }
+async function getAvailableSources(){
+  const sources = [];
+  let manifestFiles = [];
+  try {
+    const res = await fetch('./songs/manifest.json');
+    if (res.ok){
+      const list = await res.json();
+      if (Array.isArray(list)) manifestFiles = list;
+    }
+  } catch (e) {}
+
+  if (manifestFiles.length){
+    for (const filename of manifestFiles){
+      try {
+        const res = await fetch('./songs/' + filename);
+        if (!res.ok) continue;
+        const text = await res.text();
+        if (text.trim()) sources.push({ name: filename, text, kind: 'folder' });
+      } catch (e) {}
+    }
+  } else {
+    sources.push({ name: 'this file', text: document.documentElement.outerHTML, kind: 'html' });
   }
-  if (texts.length) return { texts, source: 'folder' };
-  return { texts: [EMBEDDED_SONG_TEXT], source: 'embedded (songs/ was empty or unreachable)' };
+
+  getEmbeddedSongs().forEach(s => {
+    if (s.text.trim()) sources.push({ name: s.name, text: s.text, kind: 'embedded' });
+  });
+
+  return sources;
 }
 
 function openGenerate(){
   mkStatus.textContent = '';
   mkStatus.className = 'modal-status';
   mkOutput.value = '';
+  pendingGenLines = null;
+  loadSourceList.style.display = 'none';
+  loadSourceList.innerHTML = '';
   genOverlay.classList.add('open');
 }
 
@@ -1084,9 +1202,9 @@ function buildMarkovModel(corpusLines, order){
   return { model, tokens };
 }
 
-function generateMarkovLines(corpusLines, order, targetLines){
+function generateMarkovLines(corpusLines, order, targetLines, jumpProb){
   if (!corpusLines.length) return null;
-  const { model } = buildMarkovModel(corpusLines, order);
+  const { model, tokens } = buildMarkovModel(corpusLines, order);
   const keys = Object.keys(model).filter(k => !/^\n/.test(k) && k.trim());
   if (!keys.length) return null;
 
@@ -1095,14 +1213,16 @@ function generateMarkovLines(corpusLines, order, targetLines){
   let lineCount = out.filter(t => t === '\n').length;
 
   while (lineCount < targetLines && out.length < maxTokens){
-    const key = out.slice(-order).join(' ');
-    let choices = model[key];
-    if (!choices || !choices.length){
-      out.push(...keys[Math.floor(Math.random() * keys.length)].split(' '));
-      lineCount = out.filter(t => t === '\n').length;
-      continue;
+    let next;
+    if (Math.random() < jumpProb){
+      next = tokens[Math.floor(Math.random() * tokens.length)];
+    } else {
+      const key = out.slice(-order).join(' ');
+      const choices = model[key];
+      next = (choices && choices.length)
+        ? choices[Math.floor(Math.random() * choices.length)]
+        : tokens[Math.floor(Math.random() * tokens.length)];
     }
-    const next = choices[Math.floor(Math.random() * choices.length)];
     out.push(next);
     if (next === '\n') lineCount++;
   }
@@ -1130,7 +1250,8 @@ const mkLines = document.getElementById('mkLines');
 const mkLengthLabel = document.getElementById('mkLengthLabel');
 const mkOutput = document.getElementById('mkOutput');
 const mkStatus = document.getElementById('mkStatus');
-const WEIRD_LABELS = { 1: 'Low', 2: 'Medium', 3: 'High' };
+const loadSourceList = document.getElementById('loadSourceList');
+const WEIRD_LABELS = { 1:'Minimal', 2:'Very low', 3:'Low', 4:'Mild', 5:'Medium', 6:'Elevated', 7:'High', 8:'Very high', 9:'Extreme', 10:'Chaos' };
 
 mkWeird.addEventListener('input', () => {
   mkWeirdLabel.textContent = WEIRD_LABELS[mkWeird.value];
@@ -1139,18 +1260,25 @@ mkLines.addEventListener('input', () => {
   mkLengthLabel.textContent = mkLines.value + ' lines';
 });
 
-// weirdness 1 (low) -> order 3 (tight/derivative); weirdness 3 (high) -> order 1 (loose/chaotic)
-function orderFromWeirdness(w){ return 4 - parseInt(w, 10); }
+// order: 5 (tight) down to 1 (loose) across the scale
+function orderFromWeirdness(w){
+  return Math.max(1, Math.round(5 - (parseInt(w, 10) - 1) * 4 / 9));
+}
+// jumpProb: chance per token of ignoring the chain and picking a random token instead
+function jumpProbFromWeirdness(w){
+  return (parseInt(w, 10) - 1) / 9 * 0.5;
+}
+
+let pendingGenLines = null;
 
 document.getElementById('mkGenerateBtn').addEventListener('click', async () => {
-  if (state.length && !confirm('Generate starts a brand-new song and replaces what\'s currently loaded. Save a session first if you want to keep it. Continue?')) return;
-
   mkStatus.textContent = 'Reading source…';
   mkStatus.className = 'modal-status';
   mkOutput.value = '';
+  pendingGenLines = null;
 
-  const { texts, source } = await resolveAllSongTexts();
-  const corpus = texts.flatMap(textToCorpusLines);
+  const sources = await getAvailableSources();
+  const corpus = sources.flatMap(s => textToCorpusLines(s.text));
   if (!corpus.length){
     mkStatus.textContent = 'No usable text found to generate from.';
     mkStatus.className = 'modal-status err';
@@ -1158,52 +1286,83 @@ document.getElementById('mkGenerateBtn').addEventListener('click', async () => {
   }
 
   const order = orderFromWeirdness(mkWeird.value);
+  const jumpProb = jumpProbFromWeirdness(mkWeird.value);
   const target = Math.max(4, Math.min(40, parseInt(mkLines.value, 10) || 8));
-  const result = generateMarkovLines(corpus, order, target);
+  const result = generateMarkovLines(corpus, order, target, jumpProb);
   if (!result || !result.length){
     mkStatus.textContent = 'Not enough material to generate from.';
     mkStatus.className = 'modal-status err';
     return;
   }
 
+  pendingGenLines = result;
   mkOutput.value = result.join('\n');
+  mkStatus.textContent = `Trained on ${sources.map(s => s.name).join(', ')}.`;
+  mkStatus.className = 'modal-status ok';
+});
 
-  // Generating always starts a fresh new song — it never appends onto
-  // whatever happens to already be loaded in the editor.
-  state = [{
+document.getElementById('mkInsertBtn').addEventListener('click', () => {
+  if (!pendingGenLines){
+    mkStatus.textContent = 'Generate something first.';
+    mkStatus.className = 'modal-status err';
+    return;
+  }
+  const si = state.length;
+  state.push({
     tag: 'Generated',
     fn: `markov, weirdness ${WEIRD_LABELS[mkWeird.value].toLowerCase()}`,
     spec: false,
     locked: false,
     note: '',
-    lines: result.map((text, li) => ({
-      id: `0-${li}`,
+    lines: pendingGenLines.map((text, li) => ({
+      id: `${si}-${li}`,
       text,
       type: /^\(.*\)$/.test(text) ? 'paren' : 'normal',
       status: 'keep'
     }))
-  }];
+  });
   render();
   updateStats();
-
-  mkStatus.textContent = `New song generated from ${source}.`;
-  mkStatus.className = 'modal-status ok';
+  pendingGenLines = null;
+  genOverlay.classList.remove('open');
 });
 
 document.getElementById('mkLoadBtn').addEventListener('click', async () => {
-  mkStatus.textContent = 'Loading…';
+  mkStatus.textContent = 'Finding sources…';
   mkStatus.className = 'modal-status';
-  const { text, source } = await resolveASong();
-  const parsed = parseImportText(text);
-  if (!parsed.length){
-    mkStatus.textContent = 'Nothing parseable found.';
+  loadSourceList.innerHTML = '';
+  loadSourceList.style.display = 'none';
+
+  const sources = await getAvailableSources();
+  if (!sources.length){
+    mkStatus.textContent = 'Nothing found in songs/ or embedded in this file.';
     mkStatus.className = 'modal-status err';
     return;
   }
-  loadSections(parsed);
-  mkStatus.textContent = `Loaded from ${source}.`;
-  mkStatus.className = 'modal-status ok';
-  genOverlay.classList.remove('open');
+
+  sources.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'song-item';
+    btn.textContent = `${s.name}${s.kind === 'folder' ? '' : ' — built-in'}`;
+    btn.addEventListener('click', () => {
+      const parsed = parseImportText(s.text);
+      if (!parsed.length){
+        mkStatus.textContent = 'That source had nothing parseable in it.';
+        mkStatus.className = 'modal-status err';
+        return;
+      }
+      loadSections(parsed);
+      mkStatus.textContent = `Loaded ${s.name}.`;
+      mkStatus.className = 'modal-status ok';
+      loadSourceList.style.display = 'none';
+      genOverlay.classList.remove('open');
+    });
+    loadSourceList.appendChild(btn);
+  });
+
+  loadSourceList.style.display = 'flex';
+  mkStatus.textContent = `${sources.length} source${sources.length === 1 ? '' : 's'} found — pick one.`;
+  mkStatus.className = 'modal-status';
 });
 
 render();
