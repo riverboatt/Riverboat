@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Captain's Logbook — The Evertide</title>
+<style>
+  body {
+    background: #14100c;
+    color: #d8cdb8;
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    line-height: 1.55;
+  }
+  h1 {
+    font-size: 1.8rem;
+    color: #d8a648;
+    margin-bottom: 0.1rem;
+  }
+  .byline {
+    color: #8a7a5c;
+    font-style: italic;
+    margin-top: 0;
+  }
+  .byline s { opacity: 0.6; }
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .portrait {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #3a3020;
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #3a3020;
+    border-radius: 4px;
+  }
+  .gallery figure {
+    margin: 0;
+  }
+  .gallery img {
+    width: 100%;
+    display: block;
+    border: 1px solid #3a3020;
+    border-radius: 4px;
+  }
+  .gallery figcaption {
+    font-size: 0.8em;
+    color: #8a7a5c;
+    font-style: italic;
+    margin-top: 0.3rem;
+  }
+  h2 {
+    color: #d8a648;
+    border-bottom: 1px solid #3a3020;
+    padding-bottom: 0.3rem;
+    margin-top: 2.5rem;
+  }
+  ul { padding-left: 1.3rem; }
+  li { margin-bottom: 0.9rem; }
+  a { color: #7fb8d8; }
+  a:hover { color: #a8d8f8; }
+  .uncatalogued {
+    color: #6a6152;
+    font-style: italic;
+    font-size: 0.85em;
+  }
+  .player {
+    margin: 0.4rem 0 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  audio { height: 32px; }
+  .player-fallback {
+    font-size: 0.8em;
+    color: #8a7a5c;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #3a3020;
+    margin: 2.5rem 0 1rem;
+  }
+  footer {
+    color: #6a6152;
+    font-style: italic;
+    text-align: center;
+    margin-top: 2rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <img src="img/cariacture.jpeg" alt="Riverboat Turner" class="portrait" />
+  <div>
+    <h1>Captain's Logbook</h1>
+    <p class="byline">Riverboat Turner, <s>Sovereign</s> <s>Effective</s> Weary Captain of the Evertide</p>
+  </div>
+</div>
+
+<h2>I. <a href="smt_slides.html">The Geometric Postulate</a> <small>(Theory &amp; Framework)</small></h2>
+<ul>
+  <li><a href="smt-reference.html">The 5D Manifold</a>: An explanation of our universe as a 4D "brane" embedded within a 5D "bulk," where the fifth coordinate, σ, defines our position relative to parallel histories.</li>
+  <li>Periodic Potential &amp; Stacked Timelines: Diagrams of the "washboard" potential U(σ), showing how reality consists of stable, parallel timelines stacked along the σ-axis rather than branching multiverses.</li>
+  <li>The Nature of the Shortcut: Visualizations of 5D geodesics taking chords through the bulk to re-intersect Earth's worldline at displaced temporal coordinates.</li>
+  <li>Quintessence &amp; The Cosmic Tilt: Documentation on the linkage between increased entropy and the slope of the sigma surface.</li>
+</ul>
+
+<h2>II. Engineering the Fold <small>(Technology &amp; Hardware)</small></h2>
+<ul>
+  <li>
+    The <a href="src/sigma_transmission.py">σ-Drive Field Coils</a>: Specifications for the pulsed system that deposits ~30 MJ of activation energy (see the energy budget, O4) to impart a velocity in the sigma direction and decouple a capsule from the brane.
+    <div class="player">
+      <audio controls preload="none" src="https://cdn1.suno.ai/e8c38824-9f20-4dcd-af05-79ae740faf8b.mp3"></audio>
+      <span class="player-fallback">"Golden Window" &middot; <a href="https://suno.com/s/dPr62Ngr31PHFdsv">listen on Suno</a></span>
+    </div>
+  </li>
+  <li class="uncatalogued">Pressure Capsule Schematics: Blueprints of the steam-powered, riveted iron hull designed to survive the 5D lurch while maintaining normal internal proper time. — uncatalogued</li>
+  <li class="uncatalogued">The Silt-Trap Capacitor Bank: Details on the hardware required to manage the massive energy pulse needed. — uncatalogued</li>
+</ul>
+
+<h2>III. Navigating the Always <small>(Software &amp; Computation)</small></h2>
+<ul>
+  <li>The Geodesic Optimizer: Documentation on the computer systems that solve 5D boundary-value problems to find path intersections with Earth's future or past.</li>
+  <li>
+    <a href="songs/fold_the_map.txt">Transfer Window Timetables</a>: Calculated schedules for "cheap" jumps based on geometric alignments of Earth's position in the galaxy.
+    <div class="player">
+      <audio controls preload="none" src="https://cdn1.suno.ai/561d0c96-e1dc-4f8a-aac7-e018fbb1da6a.mp3"></audio>
+      <span class="player-fallback">"Fold the Map" &middot; <a href="https://suno.com/s/xfnN02ItL2mEleBe">listen on Suno</a></span>
+    </div>
+  </li>
+  <li class="uncatalogued">The "Effective" Logic: Assembly code snippets and algorithmic prayers used to calibrate the shivers in the pressure gauges. — uncatalogued</li>
+  <li class="uncatalogued">Pathology Guards: Software safety protocols designed to reject "garbage" geodesics that would lead to coordinate singularities or metric overflows. — uncatalogued</li>
+</ul>
+
+<h2>IV. Logs from the Bridge <small>(Recordings &amp; Narrative)</small></h2>
+<ul>
+  <li>
+    <a href="songs/evertide.md">The Captain's Spoken Intro</a> &amp; The Evertide Song Lyrics: The full text of the Captain's journey from a "Sovereign" master of the machine to a "Weary" traveler resigned to being "Effective... at being lost."
+    <div class="player">
+      <audio controls preload="none" src="https://cdn1.suno.ai/8b705a87-5694-4f3a-9357-2b8eef3e05ae.mp3"></audio>
+      <span class="player-fallback">"Evertide" &middot; <a href="https://suno.com/s/cp6D8wYvfKIDdoN1">listen on Suno</a></span>
+    </div>
+  </li>
+  <li>Inventory of Everything Seen: Narratives of standing in the ash of dead places and watching rulers change faces across the centuries.</li>
+  <li>The "Always" Archive: A collection of artifacts and sensory logs from eras ranging from "chrome '50s" to "bright '80s" to the "heat-death haze."</li>
+</ul>
+<div class="gallery" id="gallery"></div>
+
+<h2>V. Signals in the Silt <small>(Observations &amp; Evidence)</small></h2>
+<ul>
+  <li>The O1–O5 Observation Ledger: A formalized table of the five verified observables that prove temporal displacement occurred without superluminal motion.</li>
+  <li class="uncatalogued">The Breathing-Mode Wake: Data logs of the characteristic isotropic bursts detected by instruments whenever a fold is opened or closed. — uncatalogued</li>
+  <li class="uncatalogued">Clock Discrepancy Reports: Hard evidence of proper-time divergence between capsule chronometers and surface clocks. — uncatalogued</li>
+  <li class="uncatalogued">Null-Cone Reachable Sets: Causal maps showing how the bulk route strictly contains the on-surface reachable set, allowing navigation ahead of local causality. — uncatalogued</li>
+</ul>
+
+<h2>VI. Discovered Tech <small>(Salvage &amp; Sightings)</small></h2>
+<ul>
+  <li><a href="mycelia.html">MYCELIA Data Centers</a>: A self-healing, fungal-modeled compute architecture found growing rather than clearing land on one of the downstream stops — logged for the record, cause unclear.</li>
+</ul>
+
+<hr>
+<footer>Wet pages in a logbook. When are we now? Doesn't matter. It's just the river.</footer>
+
+<script>
+const CAPTIONS = {
+  "cariacture.jpeg": "Riverboat Turner, at rest.",
+  "headshot.jpg": "The Captain, sigma-drive headset engaged, the Evertide behind him.",
+  "smt_banner.png": "The washboard, sketched — see Periodic Potential & Stacked Timelines, section I.",
+  "fold_the_map.jpg": "Fold the map — see Transfer Window Timetables, section III.",
+};
+
+function prettify(filename) {
+  return filename.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
+}
+
+fetch("img/manifest.json")
+  .then((r) => r.json())
+  .then((files) => {
+    const gallery = document.getElementById("gallery");
+    for (const file of files) {
+      const figure = document.createElement("figure");
+      const img = document.createElement("img");
+      img.src = "img/" + encodeURIComponent(file);
+      img.alt = CAPTIONS[file] || prettify(file);
+      const figcaption = document.createElement("figcaption");
+      figcaption.textContent = CAPTIONS[file] || prettify(file);
+      figure.appendChild(img);
+      figure.appendChild(figcaption);
+      gallery.appendChild(figure);
+    }
+  })
+  .catch((err) => console.error("Gallery failed to load:", err));
+</script>
+
+</body>
+</html>

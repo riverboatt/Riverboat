@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Sigma–Manifold Theory — Unified Working Reference</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<style>
+  body {
+    background: #14100c;
+    color: #d8cdb8;
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    line-height: 1.6;
+  }
+  h1, h2, h3 { color: #d8a648; }
+  h1 { font-size: 1.7rem; }
+  h2 {
+    border-bottom: 1px solid #3a3020;
+    padding-bottom: 0.3rem;
+    margin-top: 2.5rem;
+  }
+  a { color: #7fb8d8; }
+  a:hover { color: #a8d8f8; }
+  code {
+    background: #201a12;
+    color: #e8dcc4;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  pre code {
+    display: block;
+    padding: 0.8em;
+    overflow-x: auto;
+  }
+  blockquote {
+    border-left: 3px solid #3a3020;
+    margin-left: 0;
+    padding-left: 1rem;
+    color: #b8ac94;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #3a3020;
+    margin: 2rem 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+  }
+  th, td {
+    border: 1px solid #3a3020;
+    padding: 0.5rem;
+    text-align: left;
+  }
+  th { color: #d8a648; }
+  #status { color: #ff0; }
+  .back-link { display: inline-block; margin-bottom: 1.5rem; }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="logbook.html">&larr; back to the Logbook</a>
+<div id="status">Rendering reference…</div>
+<div id="content"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+const statusEl = document.getElementById("status");
+const contentEl = document.getElementById("content");
+
+fetch("SMT_unified_reference.md")
+  .then((r) => r.text())
+  .then((md) => {
+    contentEl.innerHTML = marked.parse(md);
+    renderMathInElement(contentEl, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+      ],
+    });
+    statusEl.remove();
+  })
+  .catch((err) => {
+    statusEl.textContent = "Failed to load reference: " + err;
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
