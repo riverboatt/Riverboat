@@ -1,64 +1,84 @@
-import curses
+import asyncio
+import collections
+import queue
 import random
+import sys
+import threading
 import time
+from pathlib import Path
+from rich.live import Live
+from rich.panel import Panel
+from rich.layout import Layout
+from rich.table import Table
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.text import Text
 
 # =====================================================================
+# MYCELIA — The Grown Data Center
+# BEKW-CODE Open Hardware Spec
+# Nature already solved distributed, resilient, self-healing infrastructure. 
+# We just forgot to copy the homework.
+# =====================================================================
+
+# ---------------------------------------------------------------------
 # TUNABLE GAMEPLAY CONFIGURATION
-# =====================================================================
-TICK_RATE_SECONDS = 0.20       # Lower = faster game cycles (0.15 is snappy)
+# ---------------------------------------------------------------------
+TICK_RATE_SECONDS = 0.20       
 
-# Structural Stacking
-MAX_POD_STACK_DEPTH = 2        # Max stack levels (1 = Normal, 2 = Stacked)
-FOOD_BONUS_PER_STACK = 1.5     # Heat/food multiplier if a host pod is stacked
-KNOWLEDGE_BONUS_PER_STACK = 2.0 # Network connectivity weight multiplier if stacked
+# 2.2 The Growth Layer (Expansion Without Land Clearing)
+MAX_POD_STACK_DEPTH = 2        
+FOOD_BONUS_PER_STACK = 1.5     
+KNOWLEDGE_BONUS_PER_STACK = 2.0 
 
-# Symbiotic Pattern Thresholds
-GARDEN_NEIGHBOR_REQ = 2        # Local adjacent pods needed to trigger a Garden
-LIBRARY_CONNECTIVITY_REQ = 6   # Minimum global mesh group size needed to trigger a Library
+# 2.3 The Surface Layer (Library + Garden — the public-facing organism)
+GARDEN_NEIGHBOR_REQ = 2        
+LIBRARY_CONNECTIVITY_REQ = 6   
 
-# Threat / Blight Scaling
-BLIGHT_START_CHANCE = 0.01     # Initial chance per tick of a blight strike
-BLIGHT_GROWTH_PER_TICK = 0.0003 # Escalation slope over time
-BLIGHT_MAX_CHANCE = 0.55       # Upper threshold limit for blight strikes
-TICKS_PER_EXTRA_STRIKE = 250   # Older networks experience multiple simultaneous strikes
+# 5. Why This Solves the Actual Complaint: Blight / Threat / Strain
+BLIGHT_START_CHANCE = 0.01     
+BLIGHT_GROWTH_PER_TICK = 0.0009 
+BLIGHT_MAX_CHANCE = 0.55        
+TICKS_PER_EXTRA_STRIKE = 250   
 
-# Economy Yield Defaults
+# Economy Yield Defaults (Operating Byproducts)
 BASE_FOOD_YIELD = 5      
 BASE_KNOWLEDGE_YIELD = 10   
 
 # Passive Self-Healing Effectiveness
-HEAL_EFFECT_GARDEN = 0.005      # Heal chance modifier per active Garden
-HEAL_EFFECT_LIBRARY = 0.008     # Heal chance modifier per active Library
-MAX_HEAL_PROBABILITY = 0.50     # Absolute upper threshold limit for self-healing
+HEAL_EFFECT_GARDEN = 0.005      
+HEAL_EFFECT_LIBRARY = 0.008     
+MAX_HEAL_PROBABILITY = 0.50     
 
-# Action & Maintenance Economics
+# Action & Maintenance Economics (Resource-Sharing Matrix)
 STARTING_FOOD = 100
 STARTING_KNOWLEDGE = 100
-COST_PLANT_POD = 30             # Deducted from Food
-COST_STACK_POD = 50             # Deducted from Knowledge
-COST_AUTO_HEAL_FOOD = 20        # Resource tax when the system automatically fixes an X
+COST_PLANT_POD = 30             
+COST_STACK_POD = 50             
+COST_AUTO_HEAL_FOOD = 20        
 COST_AUTO_HEAL_KNOW = 20
-COST_MANUAL_REPAIR_FOOD = 15    # Resource tax when you click-to-fix an X
+COST_MANUAL_REPAIR_FOOD = 15    
 COST_MANUAL_REPAIR_KNOW = 15
 # =====================================================================
 
-# Interface / Render Glyphs
-EMPTY = ' '
-POD_NORMAL = 'm'                # Lowercase for unstacked asset visibility
-POD_STACKED = 'M'               # Uppercase for stacked asset visibility
-GARDEN = 'G'      
-LIBRARY = 'L'     
-PULSE = '•'       
-DAMAGED = 'X'     
+# Interface / Render Glyphs (Configured with Rich Styles)
+EMPTY = " "
+POD_NORMAL = "[green]m[/green]"
+POD_STACKED = "[bold green]M[/bold green]"
+GARDEN = "[bright_yellow]G[/bright_yellow]"
+LIBRARY = "[bright_magenta]L[/bright_magenta]"
+PULSE = "[cyan]•[/cyan]"
+DAMAGED = "[bold red]X[/bold red]"
+CURSOR = "[bold blink white]🔲[/bold blink white]"
 
-class MyceliaEconomicGame:
-    def __init__(self, stdscr):
-        self.stdscr = stdscr
-        self.height, self.width = stdscr.getmaxyx()
+class MyceliaCursorGame:
+    def __init__(self):
+        self.sim_h = 16
+        self.sim_w = 40
         
-        # Grid boundaries optimized for portability
-        self.sim_h = min(20, self.height - 8)
-        self.sim_w = min(45, self.width - 32)
+        # Cursor Tracking State
+        self.cursor_r = self.sim_h // 2
+        self.cursor_c = self.sim_w // 2
         
         self.pods = {}            
         self.surfaces = {}        
@@ -70,19 +90,20 @@ class MyceliaEconomicGame:
         self.knowledge_score = STARTING_KNOWLEDGE
         
         self.logs = [
-            "ECONOMY ENGINE ONLINE.",
-            f"New Pod: -{COST_PLANT_POD} Food. Stack Pod: -{COST_STACK_POD} Knowledge.",
-            f"Auto-Healing consumes -{COST_AUTO_HEAL_FOOD}F / -{COST_AUTO_HEAL_KNOW}K."
+            "NAVIGATION ENGINE ONLINE. Use IJKL or WASD keys to navigate.",
+            "Press SPACE over a tile to interact based on context:",
+            "  - Empty Tile: Plant Pod   - Normal Pod (m): Stack to (M)",
+            "  - Severed Node (X): Manually Patch & Repair"
         ]
         
-        # Plant foundational free starter colony
+        # 1. Concept & Inversion: Core Architecture Layer
         mid_h, mid_w = self.sim_h // 2, self.sim_w // 2
-        self.pods[(mid_h, mid_w)] = 1
-        self.pods[(mid_h, mid_w + 1)] = 1
-
+        self.pods[(mid_h, mid_w - 2)] = 1
+        self.pods[(mid_h, mid_w - 1)] = 1
+        self.pods[(mid_h + 1, mid_w - 2)] = 1
 
     def count_local_neighbors(self, r, c):
-        """Measures immediate physical density in an 8-way adjacent radius."""
+        # 2.3 Localized waste-heat output
         count = 0
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
@@ -93,7 +114,7 @@ class MyceliaEconomicGame:
         return count
 
     def get_mesh_connectivity_score(self, start_node):
-        """Calculates size of the active network component via a flood-fill check."""
+        # 2.1 Interconnected mycelial matrix
         if start_node in self.damaged_nodes or start_node not in self.pods:
             return 0
         visited = set()
@@ -124,30 +145,30 @@ class MyceliaEconomicGame:
         self.ticks += 1
         active_pods = [p for p in self.pods if p not in self.damaged_nodes]
 
-        # 1. BIOMIMETIC PATTERN PARSING
+        # 2. Core Architecture — Three Layers, One Organism
         for (r, c) in active_pods:
             local_density = self.count_local_neighbors(r, c)
             global_connectivity = self.get_mesh_connectivity_score((r, c))
             
-            # A. Density Trigger -> Garden Sprout
+            # 2.3 Greenhouse / Garden Layer
             if local_density >= GARDEN_NEIGHBOR_REQ and (r, c) not in self.surfaces:
                 for dr, dc in [(-1,0), (1,0), (0,-1), (0,1)]:
                     nr, nc = r + dr, c + dc
-                    if 1 <= nr < self.sim_h and 1 <= nc < self.sim_w and (nr, nc) not in self.pods and (nr, nc) not in self.surfaces:
+                    if 0 <= nr < self.sim_h and 0 <= nc < self.sim_w and (nr, nc) not in self.pods and (nr, nc) not in self.surfaces:
                         self.surfaces[(nr, nc)] = GARDEN
                         self.add_log(f"Garden Sprouted at ({nr}, {nc})")
                         break
             
-            # B. Connectivity Trigger -> Library Sprout
+            # 2.3 Public Library Layer
             if global_connectivity >= LIBRARY_CONNECTIVITY_REQ:
                 for dr, dc in [(-1,-1), (1,1), (-1,1), (1,-1)]:
                     nr, nc = r + dr, c + dc
-                    if 1 <= nr < self.sim_h and 1 <= nc < self.sim_w and (nr, nc) not in self.pods and (nr, nc) not in self.surfaces:
+                    if 0 <= nr < self.sim_h and 0 <= nc < self.sim_w and (nr, nc) not in self.pods and (nr, nc) not in self.surfaces:
                         self.surfaces[(nr, nc)] = LIBRARY
                         self.add_log(f"Library Opened at ({nr}, {nc})")
                         break
 
-        # 2. ESCALATING ECO-BLIGHT THREAT
+        # 3. Systems Detail: Simulated Damage / Failure Mode
         current_threat = BLIGHT_START_CHANCE + (self.ticks * BLIGHT_GROWTH_PER_TICK)
         actual_threat_prob = min(current_threat, BLIGHT_MAX_CHANCE)
         
@@ -160,7 +181,6 @@ class MyceliaEconomicGame:
                     active_pods.remove(target)
                     self.add_log(f"BLIGHT ALERT: Node severed at {target}")
 
-        # Prune isolated surface structures that lost host contact
         for (sr, sc), stype in list(self.surfaces.items()):
             has_host = False
             for dr in [-1, 0, 1]:
@@ -171,19 +191,20 @@ class MyceliaEconomicGame:
                 del self.surfaces[(sr, sc)]
                 self.add_log("Decay: Surface structure lost host loop.")
 
-        # 3. YIELD ACCUMULATION & TAX-BASED SELF-HEALING
+        # 6. Open Questions / Testing & Validation
         num_gardens = list(self.surfaces.values()).count(GARDEN)
         num_libraries = list(self.surfaces.values()).count(LIBRARY)
         
-        self.food_score += num_gardens * BASE_FOOD_YIELD
-        self.knowledge_score += num_libraries * BASE_KNOWLEDGE_YIELD
+        game_food_yield = num_gardens * BASE_FOOD_YIELD
+        game_knowledge_yield = num_libraries * BASE_KNOWLEDGE_YIELD
+        
+        self.food_score += game_food_yield
+        self.knowledge_score += game_knowledge_yield
 
-        # Automated recovery probability logic
         calculated_healing = (num_gardens * HEAL_EFFECT_GARDEN) + (num_libraries * HEAL_EFFECT_LIBRARY)
         actual_heal_prob = min(calculated_healing, MAX_HEAL_PROBABILITY)
         
         if self.damaged_nodes and random.random() < actual_heal_prob:
-            # Check if reserves can afford the automatic biomass patch cost
             if self.food_score >= COST_AUTO_HEAL_FOOD and self.knowledge_score >= COST_AUTO_HEAL_KNOW:
                 healed_node = random.choice(list(self.damaged_nodes))
                 self.damaged_nodes.discard(healed_node)
@@ -193,7 +214,7 @@ class MyceliaEconomicGame:
             else:
                 self.add_log("System Warning: Short on resources to auto-heal damage!")
 
-        # 4. MESH ROUTING GRAPHICS GENERATOR
+        # 2.1 Active Data Routing
         self.pulses = []
         if len(active_pods) >= 2:
             src, dest = random.choice(active_pods), random.choice(active_pods)
@@ -208,135 +229,237 @@ class MyceliaEconomicGame:
                         break
                     self.pulses.append((curr_r, curr_c))
 
-    def handle_click(self, mx, my, is_double_click):
-        if 0 < my < self.sim_h and 0 < mx < self.sim_w:
-            # Route Action A: Manual Repair Click
-            if (my, mx) in self.damaged_nodes:
+    def handle_input(self, key):
+        if not key:
+            return
+        key = key.lower()
+        
+        # 1. Navigation Mapping (IJKL Layout)
+        if key in ('i', 'w') and self.cursor_r > 0:
+            self.cursor_r -= 1
+        elif key in ('k', 's') and self.cursor_r < self.sim_h - 1:
+            self.cursor_r += 1
+        elif key in ('j', 'a') and self.cursor_c > 0:
+            self.cursor_c -= 1
+        elif key in ('l', 'd') and self.cursor_c < self.sim_w - 1:
+            self.cursor_c += 1
+            
+        # 2. Context Action Evaluation Key (Space)
+        elif key == ' ':
+            target_coord = (self.cursor_r, self.cursor_c)
+            
+            # Action Condition A: Targeted Repair Check
+            if target_coord in self.damaged_nodes:
                 if self.food_score >= COST_MANUAL_REPAIR_FOOD and self.knowledge_score >= COST_MANUAL_REPAIR_KNOW:
-                    self.damaged_nodes.discard((my, mx))
+                    self.damaged_nodes.discard(target_coord)
                     self.food_score -= COST_MANUAL_REPAIR_FOOD
                     self.knowledge_score -= COST_MANUAL_REPAIR_KNOW
-                    self.add_log(f"Manual Repair: Fixed ({my}, {mx}) (-{COST_MANUAL_REPAIR_FOOD}F/-{COST_MANUAL_REPAIR_KNOW}K)")
+                    self.add_log(f"Manual Repair: Patched node {target_coord}")
                 else:
-                    self.add_log("Error: Short on resources for manual repair.")
-            
-            # Route Action B: Upgrade Stack Level Click
-            elif (my, mx) in self.pods:
-                if is_double_click:
-                    if self.pods[(my, mx)] < MAX_POD_STACK_DEPTH:
-                        if self.knowledge_score >= COST_STACK_POD:
-                            self.pods[(my, mx)] += 1
-                            self.knowledge_score -= COST_STACK_POD
-                            self.add_log(f"Stacked: Upgraded to '{POD_STACKED}' (-{COST_STACK_POD} Knowledge)")
-                        else:
-                            self.add_log("Error: Need more Knowledge to stack infrastructure.")
+                    self.add_log("Error: Deficit to execute manual hardware repair.")
+                    
+            # Action Condition B: Targeted Structural Level Upgrade Stacking
+            elif target_coord in self.pods:
+                current_depth = self.pods[target_coord]
+                if current_depth < MAX_POD_STACK_DEPTH:
+                    if self.knowledge_score >= COST_STACK_POD:
+                        self.pods[target_coord] += 1
+                        self.knowledge_score -= COST_STACK_POD
+                        self.add_log(f"Stacked: Upgraded node {target_coord} to level 2")
+                    else:
+                        self.add_log("Error: Need more Knowledge to scale infrastructure layers.")
                 else:
-                    self.add_log("Node occupied. DOUBLE-CLICK to stack up.")
-            
-            # Route Action C: Plant New Infrastructure Pod Click
+                    self.add_log("Node already functioning at maximum structural threshold depth.")
+                    
+            # Action Condition C: New Pod Allocation Placement
             else:
                 if self.food_score >= COST_PLANT_POD:
-                    self.pods[(my, mx)] = 1
+                    self.pods[target_coord] = 1
                     self.food_score -= COST_PLANT_POD
-                    self.add_log(f"Cultivated: Placed '{POD_NORMAL}' pod (-{COST_PLANT_POD} Food)")
+                    self.add_log(f"Cultivated: Added new pod loop asset at {target_coord}")
                 else:
-                    self.add_log("Error: Deficit! Not enough Food to build new hardware.")
+                    self.add_log("Error: Deficit! Not enough Food biomass to extend outward.")
 
-    def draw(self):
-        self.stdscr.erase()
-        
-        # Frame Layout Bounds
-        for r in range(self.sim_h + 1):
-            for c in range(self.sim_w + 1):
-                if r == 0 or r == self.sim_h or c == 0 or c == self.sim_w:
-                    self.stdscr.addch(r, c, '#', curses.A_DIM)
+    def render_grid(self) -> Text:
+        grid_lines = []
+        for r in range(self.sim_h):
+            row_tokens = []
+            for c in range(self.sim_w):
+                coord = (r, c)
+                
+                # Superimpose cursor selection box layout safely on top
+                if r == self.cursor_r and c == self.cursor_c:
+                    row_tokens.append(CURSOR)
+                elif coord in self.damaged_nodes:
+                    row_tokens.append(DAMAGED)
+                elif coord in self.pods:
+                    row_tokens.append(POD_STACKED if self.pods[coord] > 1 else POD_NORMAL)
+                elif coord in self.surfaces:
+                    row_tokens.append(self.surfaces[coord])
+                elif coord in self.pulses:
+                    row_tokens.append(PULSE)
+                else:
+                    row_tokens.append(EMPTY)
+            grid_lines.append(" ".join(row_tokens))
+        return Text.from_markup("\n".join(grid_lines))
 
-        # Draw Field Objects
-        for (r, c), stack_level in self.pods.items():
-            if (r, c) in self.damaged_nodes:
-                self.stdscr.addch(r, c, DAMAGED, curses.A_REVERSE)
-            else:
-                ch = POD_STACKED if stack_level > 1 else POD_NORMAL
-                self.stdscr.addch(r, c, ch)
-
-        for (r, c), stype in self.surfaces.items():
-            if (r, c) not in self.pods:
-                self.stdscr.addch(r, c, stype, curses.A_UNDERLINE)
-
-        for (r, c) in self.pulses:
-            if 0 < r < self.sim_h and 0 < c < self.sim_w:
-                if self.stdscr.inch(r, c) & curses.A_CHARTEXT == ord(' '):
-                    self.stdscr.addch(r, c, PULSE)
-
-        # Dashboard Sidebar Telemetry Parsing
-        num_gardens = list(self.surfaces.values()).count(GARDEN)
-        num_libraries = list(self.surfaces.values()).count(LIBRARY)
-        
-        current_threat = BLIGHT_START_CHANCE + (self.ticks * BLIGHT_GROWTH_PER_TICK)
-        display_threat = min(current_threat, BLIGHT_MAX_CHANCE) * 100
-        display_heal = min(((num_gardens * HEAL_EFFECT_GARDEN) + (num_libraries * HEAL_EFFECT_LIBRARY)), MAX_HEAL_PROBABILITY) * 100
-
-        sb_c = self.sim_w + 4
-        self.stdscr.addstr(1, sb_c, "╔══════════════════════════╗")
-        self.stdscr.addstr(2, sb_c, "║   MYCELIAL MATRIX SIM    ║", curses.A_BOLD)
-        self.stdscr.addstr(3, sb_c, "╚══════════════════════════╝")
-        
-        self.stdscr.addstr(5, sb_c, f"Maturity (Ticks):      {self.ticks}")
-        self.stdscr.addstr(6, sb_c, f"Blight Threat Rate:    {display_threat:.1f}%")
-        self.stdscr.addstr(7, sb_c, f"Auto-Healing Bio-Rate: {display_heal:.1f}%")
-        
-        self.stdscr.addstr(9, sb_c, "RESOURCE RESERVES:", curses.A_UNDERLINE)
-        self.stdscr.addstr(10, sb_c, f"🌾 Food:      {self.food_score} pts  [+{num_gardens * BASE_FOOD_YIELD}/t]")
-        self.stdscr.addstr(11, sb_c, f"📜 Knowledge: {self.knowledge_score} pts  [+{num_libraries * BASE_KNOWLEDGE_YIELD}/t]")
-        
-        total_stacked = sum(1 for lvl in self.pods.values() if lvl > 1)
-        self.stdscr.addstr(13, sb_c, f"Pods: Normal({POD_NORMAL})={len(self.pods)-len(self.damaged_nodes)-total_stacked} Stacked({POD_STACKED})={total_stacked}")
-        self.stdscr.addstr(14, sb_c, f"Active Gardens  (G): {num_gardens}")
-        self.stdscr.addstr(15, sb_c, f"Active Libraries(L): {num_libraries}")
-        
-        self.stdscr.addstr(17, sb_c, "ACTIONS COST SHEET:", curses.A_DIM)
-        self.stdscr.addstr(18, sb_c, f"- Click Empty:  Pod ({COST_PLANT_POD} Food)")
-        self.stdscr.addstr(19, sb_c, f"- Dbl-Click {POD_NORMAL}:  Stack ({COST_STACK_POD} Knowledge)")
-        self.stdscr.addstr(20, sb_c, f"- Fix Damage {DAMAGED}: Repair ({COST_MANUAL_REPAIR_FOOD}F/{COST_MANUAL_REPAIR_KNOW}K)")
-
-        # Log Board
-        log_start_y = self.sim_h + 2
-        self.stdscr.addstr(log_start_y, 1, "[ RESOURCE & INFRASTRUCTURE CONTROL ]", curses.A_DIM)
-        for idx, log in enumerate(self.logs):
-            self.stdscr.addstr(log_start_y + 1 + idx, 1, f">> {log}")
-
-        self.stdscr.refresh()
-
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.nodelay(True)
-    stdscr.keypad(True)
-    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
-    
-    game = MyceliaEconomicGame(stdscr)
-    last_tick = time.time()
-    
-    while True:
-        ch = stdscr.getch()
-        
-        if ch == ord('q') or ch == ord('Q'):
-            break
-            
-        elif ch == curses.KEY_MOUSE:
+class TerminalInputSource:
+    def __init__(self):
+        self._queue = queue.Queue()
+        self._restore_terminal = lambda: None
+        if sys.stdin.isatty():
+            import readchar
             try:
-                _, mx, my, _, bstate = curses.getmouse()
-                is_double = True if (bstate & curses.BUTTON1_DOUBLE_CLICKED) else False
-                if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_PRESSED | curses.BUTTON1_DOUBLE_CLICKED):
-                    game.handle_click(mx, my, is_double)
-            except curses.error:
+                import termios
+                fd = sys.stdin.fileno()
+                original_settings = termios.tcgetattr(fd)
+                self._restore_terminal = lambda: termios.tcsetattr(fd, termios.TCSADRAIN, original_settings)
+            except ImportError:
                 pass
-        
-        if time.time() - last_tick > TICK_RATE_SECONDS:
-            game.game_loop_tick()
-            game.draw()
-            last_tick = time.time()
-            
-        time.sleep(0.02)
+            thread = threading.Thread(target=self._poll, args=(readchar,), daemon=True)
+            thread.start()
+
+    def _poll(self, readchar):
+        while True:
+            self._queue.put(readchar.readkey())
+
+    def get_nowait(self):
+        try:
+            return self._queue.get_nowait()
+        except queue.Empty:
+            return None
+
+    def close(self):
+        self._restore_terminal()
+
+class PyodideInputSource:
+    def __init__(self):
+        self._keys = collections.deque()
+
+    def close(self):
+        pass
+
+    def push_key(self, key):
+        self._keys.append(key)
+
+    def get_nowait(self):
+        try:
+            return self._keys.popleft()
+        except IndexError:
+            return None
+
+class JSOutput:
+    def write(self, text):
+        from js import termWrite
+        termWrite(text.replace("\n", "\r\n"))
+
+    def flush(self):
+        pass
+
+    def isatty(self):
+        return True
+
+PYODIDE_COLS, PYODIDE_ROWS = 130, 44
+
+def read_bekw_gist():
+    try:
+        return (Path(__file__).parent / "Data_center.gist").read_text()
+    except OSError:
+        return ""
+
+_pyodide_input = None
+
+def push_key(key):
+    if _pyodide_input is not None:
+        _pyodide_input.push_key(key)
+
+def start_pyodide():
+    global _pyodide_input
+    _pyodide_input = PyodideInputSource()
+    console = Console(file=JSOutput(), force_terminal=True,
+                       color_system="truecolor",
+                       width=PYODIDE_COLS, height=PYODIDE_ROWS)
+    asyncio.ensure_future(main(input_source=_pyodide_input, console=console))
+
+async def main(input_source=None, console=None):
+    if input_source is None:
+        input_source = TerminalInputSource()
+    if console is None:
+        console = Console()
+    game = MyceliaCursorGame()
+
+    try:
+        with Live(console=console, screen=True, auto_refresh=False) as live:
+            last_tick = time.monotonic()
+
+            while True:
+                # Poll inputs instantly and non-blockingly
+                ch = input_source.get_nowait()
+                if ch:
+                    if ch.lower() == 'q':
+                        break
+                    else:
+                        game.handle_input(ch)
+
+                # Game core tick cycles
+                if time.monotonic() - last_tick > TICK_RATE_SECONDS:
+                    game.game_loop_tick()
+                    last_tick = time.monotonic()
+
+                # Parse sidebar statistics and layout components
+                num_gardens = list(game.surfaces.values()).count(GARDEN)
+                num_libraries = list(game.surfaces.values()).count(LIBRARY)
+                current_threat = BLIGHT_START_CHANCE + (game.ticks * BLIGHT_GROWTH_PER_TICK)
+                display_threat = min(current_threat, BLIGHT_MAX_CHANCE) * 100
+                display_heal = min(((num_gardens * HEAL_EFFECT_GARDEN) + (num_libraries * HEAL_EFFECT_LIBRARY)), MAX_HEAL_PROBABILITY) * 100
+                total_stacked = sum(1 for lvl in game.pods.values() if lvl > 1)
+
+                # Assign View Windows
+                grid_panel = Panel(game.render_grid(), title="[bold green]Mycelia Spatial Computing Array[/bold green]", border_style="green")
+
+                stats_table = Table.grid(padding=1)
+                stats_table.add_row(f"[bold yellow]Ticks Passed:[/bold yellow] {game.ticks}")
+                stats_table.add_row(f"[bold red]Blight Threat:[/bold red] {display_threat:.1f}%")
+                stats_table.add_row(f"[bold cyan]Auto-Heal Rate:[/bold cyan] {display_heal:.1f}%")
+                stats_table.add_row("")
+                stats_table.add_row(f"Target Selection Pos: [bold white]({game.cursor_r}, {game.cursor_c})[/bold white]")
+                stats_table.add_row("")
+                stats_table.add_row("[bold underline]RESOURCE RESERVES[/bold underline]")
+                stats_table.add_row(f"🌾 Food Draw:   [green]{game.food_score}[/green] pts (+{num_gardens * BASE_FOOD_YIELD}/t)")
+                stats_table.add_row(f"📜 Knowledge:   [green]{game.knowledge_score}[/green] pts (+{num_libraries * BASE_KNOWLEDGE_YIELD}/t)")
+                stats_table.add_row("")
+                stats_table.add_row(f"Pods: Normal(m)={len(game.pods)-len(game.damaged_nodes)-total_stacked} Stacked(M)={total_stacked}")
+                stats_table.add_row(f"Active Gardens(G): {num_gardens} | Libraries(L): {num_libraries}")
+                stats_table.add_row("")
+                stats_table.add_row("[dim]Navigation Layout Hotkeys:[/dim]")
+                stats_table.add_row("[bold white]  I/W=Up  J/A=Left  K/S=Down  L/D=Right[/bold white]")
+                stats_table.add_row("[bold cyan]  SPACE=Execute Context Action (Plant/Stack/Repair)[/bold cyan]")
+                stats_table.add_row("[dim]  Q=Quit Session[/dim]")
+
+                stats_panel = Panel(stats_table, title="[bold white]Systems Controls Dashboard[/bold white]", border_style="white")
+
+                # Bottom panel console log lines output box tracking
+                log_text = Text.from_markup("\n".join([f">> {log}" for log in game.logs]))
+                log_panel = Panel(log_text, title="[dim]System Console Event Loop Log[/dim]", border_style="blue")
+
+                # Main multi-split viewport construction
+                root_layout = Layout()
+                root_layout.split_column(
+                    Layout(name="top", ratio=4),
+                    Layout(name="bottom", ratio=1)
+                )
+                root_layout["top"].split_row(
+                    Layout(grid_panel, ratio=3),
+                    Layout(stats_panel, ratio=2)
+                )
+                root_layout["bottom"].update(log_panel)
+
+                live.update(root_layout, refresh=True)
+                await asyncio.sleep(0.04)
+
+        console.print(Markdown(read_bekw_gist()))
+    finally:
+        input_source.close()
 
 if __name__ == "__main__":
-    curses.wrapper(main)
+    asyncio.run(main())

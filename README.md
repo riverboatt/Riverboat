@@ -19,3 +19,4 @@
 
 ## Future Technolgy
 -[MYCELIA Data Centers](src/MYCELIA.py)
+  -[MYCELIA Data Centers - play in browser](mycelia.html)

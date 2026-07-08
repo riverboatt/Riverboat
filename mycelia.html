@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MYCELIA — The Grown Data Center</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+<style>
+  body {
+    background: #0d0d0d;
+    color: #ddd;
+    font-family: monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+  h1 { font-size: 1.1rem; color: #7CFC00; margin-bottom: 0; }
+  p.subtitle { color: #999; margin-top: 0.25rem; }
+  #status { color: #ff0; margin: 0.5rem 0; }
+  #terminal { border: 1px solid #333; padding: 4px; }
+</style>
+</head>
+<body>
+<h1>MYCELIA — The Grown Data Center</h1>
+<p class="subtitle">IJKL or WASD to navigate &middot; SPACE to plant/stack/repair &middot; Q to quit &middot; click the terminal to focus it</p>
+<div id="status">Booting Pyodide runtime&hellip;</div>
+<div id="terminal"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script>
+const TERM_COLS = 130;
+const TERM_ROWS = 44;
+
+const term = new Terminal({ cols: TERM_COLS, rows: TERM_ROWS, cursorBlink: true });
+term.open(document.getElementById("terminal"));
+
+window.termWrite = (s) => term.write(s);
+
+const statusEl = document.getElementById("status");
+
+async function boot() {
+  const pyodide = await loadPyodide();
+  await pyodide.loadPackage(["micropip", "pygments"]);
+  const micropip = pyodide.pyimport("micropip");
+  await micropip.install(["rich", "markdown-it-py"]);
+
+  const source = await (await fetch("src/MYCELIA.py")).text();
+  pyodide.FS.writeFile("MYCELIA.py", source);
+  const gist = await (await fetch("src/Data_center.gist")).text();
+  pyodide.FS.writeFile("Data_center.gist", gist);
+  const mycelia = pyodide.pyimport("MYCELIA");
+
+  mycelia.start_pyodide();
+  term.onData((data) => mycelia.push_key(data));
+  term.focus();
+
+  statusEl.remove();
+}
+
+boot().catch((err) => {
+  statusEl.textContent = "Failed to start: " + err;
+  console.error(err);
+});
+</script>
+</body>
+</html>
