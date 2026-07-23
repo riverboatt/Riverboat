@@ -453,6 +453,80 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
 }
 .song-item:hover{border-color:var(--amber-dim);}
 .song-item:disabled{opacity:.5;cursor:default;}
+
+/* ---------- ai settings + suggestions ---------- */
+button.action.primary.amber{
+  background:linear-gradient(135deg, rgba(242,166,90,0.16), rgba(242,166,90,0.06));
+  border-color:var(--amber-dim);
+  color:var(--amber);
+}
+button.action.primary.amber:hover{background:linear-gradient(135deg, rgba(242,166,90,0.24), rgba(242,166,90,0.1));border-color:var(--amber);}
+.ai-status{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--text-mute);
+}
+.ai-status:empty{display:none;}
+.ai-status.err{color:var(--red);}
+.field-label{
+  display:block;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  margin-bottom:5px;
+}
+.field-input{
+  width:100%;
+  background:var(--line-soft);
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  padding:8px 10px;
+  outline:none;
+  margin-bottom:14px;
+}
+.field-input:focus{border-color:var(--cyan-dim);}
+.field-hint{
+  font-size:11px;
+  color:var(--text-faint);
+  margin:-10px 0 14px;
+  line-height:1.5;
+}
+.line-suggestions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  padding:2px 6px 10px 32px;
+}
+.sugg-chip{
+  font-family:'Fraunces',serif;
+  font-size:13.5px;
+  text-align:left;
+  background:rgba(242,166,90,0.06);
+  border:1px solid var(--amber-dim);
+  color:var(--text);
+  padding:5px 10px;
+  border-radius:14px;
+  cursor:pointer;
+  transition:all .15s;
+  max-width:100%;
+}
+.sugg-chip:hover{border-color:var(--amber);background:rgba(242,166,90,0.12);}
+.sugg-dismiss{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  background:none;
+  border:1px solid var(--line);
+  color:var(--text-faint);
+  padding:5px 8px;
+  border-radius:14px;
+  cursor:pointer;
+}
+.sugg-dismiss:hover{color:var(--text-mute);border-color:var(--text-mute);}
 </style>
 </head>
 <body>
@@ -477,6 +551,7 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
 
 <footer id="footer" style="display:none;">
   <div class="stats" id="stats"></div>
+  <div class="ai-status" id="aiStatusMsg"></div>
   <div class="footer-btns">
     <button class="action" id="startOverBtn">Start over</button>
     <button class="action" id="importBtn">Import lyric</button>
@@ -484,6 +559,8 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
     <button class="action" id="saveSessionBtn">Save session</button>
     <button class="action primary" id="copyBtn">Copy for chat (lyric + notes)</button>
     <button class="action" id="downloadBtn">Download .txt</button>
+    <button class="action" id="aiSettingsBtn" title="Configure AI connection">AI settings</button>
+    <button class="action primary amber" id="askAiBtn">Ask AI for flagged lines</button>
   </div>
 </footer>
 
@@ -542,6 +619,27 @@ button.primary.copied{color:#0a0d13;background:var(--cyan);}
       <button class="action primary" id="mkInsertBtn">Insert</button>
     </div>
     <div id="loadSourceList" style="display:none; flex-direction:column; gap:6px; margin-top:2px;"></div>
+  </div>
+</div>
+
+<div class="overlay" id="aiSettingsOverlay">
+  <div class="modal" style="max-width:440px;">
+    <h2>AI connection</h2>
+    <p>Talks to any OpenAI-compatible <code>/chat/completions</code> endpoint — point it at a local LiteLLM proxy, Ollama's own <code>/v1</code> endpoint, LM Studio, or a cloud provider directly. The URL, key, and model are stored only in this browser's local storage and are sent only to the base URL below.</p>
+    <div>
+      <label class="field-label">Base URL</label>
+      <input class="field-input" id="aiBaseUrl" placeholder="http://localhost:4000/v1">
+      <div class="field-hint">e.g. a LiteLLM proxy, http://localhost:11434/v1 (Ollama), https://api.openai.com/v1, https://openrouter.ai/api/v1…</div>
+      <label class="field-label">API key (optional)</label>
+      <input class="field-input" id="aiApiKey" type="password" placeholder="leave blank if the server doesn't need one">
+      <label class="field-label">Model</label>
+      <input class="field-input" id="aiModel" placeholder="gpt-4o-mini / llama3 / claude-sonnet-4-5…">
+    </div>
+    <div class="modal-status" id="aiSettingsStatus"></div>
+    <div class="modal-btns">
+      <button class="action" id="aiSettingsCancel">Cancel</button>
+      <button class="action primary" id="aiSettingsSave">Save</button>
+    </div>
   </div>
 </div>
 
@@ -834,6 +932,34 @@ function render(){
       row.appendChild(marker);
       row.appendChild(textEl);
       linesWrap.appendChild(row);
+
+      if (line.suggestions && line.suggestions.length){
+        const suggWrap = document.createElement('div');
+        suggWrap.className = 'line-suggestions';
+        line.suggestions.forEach(opt => {
+          const chip = document.createElement('button');
+          chip.className = 'sugg-chip';
+          chip.textContent = opt;
+          chip.addEventListener('click', () => {
+            line.text = opt;
+            line.status = 'keep';
+            line.suggestions = null;
+            render();
+            updateStats();
+          });
+          suggWrap.appendChild(chip);
+        });
+        const dismiss = document.createElement('button');
+        dismiss.className = 'sugg-dismiss';
+        dismiss.textContent = '✕';
+        dismiss.title = 'Dismiss suggestions';
+        dismiss.addEventListener('click', () => {
+          line.suggestions = null;
+          render();
+        });
+        suggWrap.appendChild(dismiss);
+        linesWrap.appendChild(suggWrap);
+      }
     });
 
     body.appendChild(linesWrap);
@@ -1073,6 +1199,245 @@ document.getElementById('saveSessionBtn').addEventListener('click', async () => 
     btn.textContent = 'Downloaded ✓';
   }
   setTimeout(() => { btn.textContent = 'Save session'; }, 1600);
+});
+
+/* ---------- AI connection (generic OpenAI-compatible /chat/completions) ---------- */
+const AI_CONFIG_KEY = 'timesong_ai_config';
+
+function getAIConfig(){
+  try {
+    return JSON.parse(localStorage.getItem(AI_CONFIG_KEY)) || {};
+  } catch (e) { return {}; }
+}
+function setAIConfig(cfg){
+  localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(cfg));
+}
+
+async function callChatCompletion(messages){
+  const cfg = getAIConfig();
+  if (!cfg.baseUrl) throw new Error('No AI endpoint configured — open AI settings first.');
+  if (!cfg.model) throw new Error('No model set — open AI settings and set one.');
+  const res = await fetch(cfg.baseUrl + '/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(cfg.apiKey ? { 'Authorization': 'Bearer ' + cfg.apiKey } : {})
+    },
+    body: JSON.stringify({ model: cfg.model, messages })
+  });
+  if (!res.ok){
+    let detail = '';
+    try { detail = (await res.json()).error?.message || ''; } catch (e) {}
+    throw new Error(`${res.status} ${res.statusText}${detail ? ' — ' + detail : ''}`);
+  }
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Response had no message content.');
+  return content;
+}
+
+const aiSettingsOverlay = document.getElementById('aiSettingsOverlay');
+const aiBaseUrlInput = document.getElementById('aiBaseUrl');
+const aiApiKeyInput = document.getElementById('aiApiKey');
+const aiModelInput = document.getElementById('aiModel');
+const aiSettingsStatus = document.getElementById('aiSettingsStatus');
+
+function openAISettings(){
+  const cfg = getAIConfig();
+  aiBaseUrlInput.value = cfg.baseUrl || '';
+  aiApiKeyInput.value = cfg.apiKey || '';
+  aiModelInput.value = cfg.model || '';
+  aiSettingsStatus.textContent = '';
+  aiSettingsStatus.className = 'modal-status';
+  aiSettingsOverlay.classList.add('open');
+}
+document.getElementById('aiSettingsBtn').addEventListener('click', openAISettings);
+document.getElementById('aiSettingsCancel').addEventListener('click', () => aiSettingsOverlay.classList.remove('open'));
+aiSettingsOverlay.addEventListener('click', (e) => { if (e.target === aiSettingsOverlay) aiSettingsOverlay.classList.remove('open'); });
+
+document.getElementById('aiSettingsSave').addEventListener('click', () => {
+  const baseUrl = aiBaseUrlInput.value.trim().replace(/\/+$/, '');
+  if (!baseUrl){
+    aiSettingsStatus.textContent = 'Base URL is required.';
+    aiSettingsStatus.className = 'modal-status err';
+    return;
+  }
+  setAIConfig({
+    baseUrl,
+    apiKey: aiApiKeyInput.value.trim(),
+    model: aiModelInput.value.trim()
+  });
+  aiSettingsStatus.textContent = 'Saved.';
+  aiSettingsStatus.className = 'modal-status ok';
+  setTimeout(() => aiSettingsOverlay.classList.remove('open'), 500);
+});
+
+/* ---------- Ask AI: structured suggestions for flagged lines ---------- */
+const ASK_AI_LABEL = 'Ask AI for flagged lines';
+const askAiBtn = document.getElementById('askAiBtn');
+let aiStatusTimer = null;
+
+function showAiStatus(msg, isErr){
+  const el = document.getElementById('aiStatusMsg');
+  clearTimeout(aiStatusTimer);
+  el.textContent = msg;
+  el.className = 'ai-status' + (isErr ? ' err' : '');
+  if (msg && !isErr){
+    aiStatusTimer = setTimeout(() => { el.textContent = ''; el.className = 'ai-status'; }, 4000);
+  }
+}
+
+function buildAISingleLineInstructions(targetId){
+  return `You will receive the whole song as JSON: {"sections":[{"tag","fn","note","lines":[{"id","status","text"}]}]}, for context only — locked/off-limits sections are omitted entirely.
+Generate alternatives for ONLY the single flagged line with id "${targetId}". Ignore every other flagged line in the input; each is asked about separately, one at a time.
+Respond with ONLY a single JSON object and nothing else — no prose, no markdown code fences — matching exactly this shape:
+{"options":["alt 1","alt 2","alt 3"]}
+Offer 2-3 alternatives, per the guidance above about offering choices rather than fixes.`;
+}
+
+function buildAIRequestPayload(){
+  const sections = [];
+  const flaggedIds = [];
+  state.forEach(sec => {
+    if (sec.locked) return;
+    const lines = sec.lines.filter(l => l.status !== 'cut');
+    if (!lines.length) return;
+    lines.forEach(l => { if (l.status === 'flag') flaggedIds.push(l.id); });
+    sections.push({
+      tag: sec.tag,
+      fn: sec.fn,
+      note: sec.note,
+      lines: lines.map(l => ({ id: l.id, status: l.status, text: l.text }))
+    });
+  });
+  return { flaggedIds, payload: { sections } };
+}
+
+// Small local models sometimes emit a literal, unescaped newline/tab inside a JSON
+// string value — invalid JSON, but easy to repair without pulling in a JSON5 lib.
+function sanitizeJsonControlChars(text){
+  let out = '';
+  let inString = false;
+  let escapeNext = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (inString){
+      if (escapeNext){ out += ch; escapeNext = false; continue; }
+      if (ch === '\\'){ out += ch; escapeNext = true; continue; }
+      if (ch === '"'){ inString = false; out += ch; continue; }
+      if (ch === '\n'){ out += '\\n'; continue; }
+      if (ch === '\r'){ continue; }
+      if (ch === '\t'){ out += '\\t'; continue; }
+      out += ch;
+    } else {
+      if (ch === '"') inString = true;
+      out += ch;
+    }
+  }
+  return out;
+}
+
+function parseAIOptions(reply){
+  let text = reply.trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) text = fenced[1].trim();
+
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start){
+    try {
+      const parsed = JSON.parse(sanitizeJsonControlChars(text.slice(start, end + 1)));
+      if (parsed && Array.isArray(parsed.options)){
+        const opts = parsed.options.filter(o => typeof o === 'string' && o.trim());
+        if (opts.length) return opts;
+      }
+    } catch (e) { /* fall through to lenient recovery below */ }
+  }
+
+  // Lenient fallback: pull quoted strings out of an "options" array even if the
+  // JSON around it is malformed.
+  const optsMatch = text.match(/"options"\s*:\s*\[([\s\S]*?)\]/);
+  if (optsMatch){
+    const items = optsMatch[1].match(/"(?:[^"\\]|\\.)*"/g);
+    if (items){
+      const opts = items
+        .map(s => { try { return JSON.parse(sanitizeJsonControlChars(s)); } catch (e) { return null; } })
+        .filter(o => typeof o === 'string' && o.trim());
+      if (opts.length) return opts;
+    }
+  }
+
+  throw new Error('Could not parse options from AI response — raw start: ' + reply.slice(0, 120));
+}
+
+function applySuggestionToLineId(id, options){
+  state.forEach(sec => sec.lines.forEach(l => {
+    if (l.id === id) l.suggestions = options;
+  }));
+  render();
+  updateStats();
+}
+
+async function fetchOptionsForLine(system, payload){
+  const reply = await callChatCompletion([
+    { role: 'system', content: system },
+    { role: 'user', content: JSON.stringify(payload) }
+  ]);
+  return parseAIOptions(reply);
+}
+
+askAiBtn.addEventListener('click', async () => {
+  const cfg = getAIConfig();
+  if (!cfg.baseUrl){ openAISettings(); return; }
+  if (!cfg.model){
+    showAiStatus('No model set — open AI settings and set one.', true);
+    return;
+  }
+
+  const { flaggedIds, payload } = buildAIRequestPayload();
+  if (!flaggedIds.length){
+    showAiStatus('No flagged lines to ask about.', false);
+    return;
+  }
+
+  askAiBtn.disabled = true;
+  const preamble = await fetchAiPreamble();
+
+  let got = 0, failed = 0;
+  for (let i = 0; i < flaggedIds.length; i++){
+    const id = flaggedIds[i];
+    askAiBtn.textContent = `Asking AI… (${i + 1}/${flaggedIds.length})`;
+    showAiStatus(`Asking about flagged line ${i + 1} of ${flaggedIds.length}…`, false);
+    const system = preamble + '\n\n' + buildAISingleLineInstructions(id);
+
+    let options = null;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2 && !options; attempt++){
+      try {
+        options = await fetchOptionsForLine(system, payload);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    if (options){
+      applySuggestionToLineId(id, options);
+      got++;
+    } else {
+      failed++;
+      console.warn(`Ask AI: giving up on line ${id} after retry — ${lastErr && lastErr.message}`);
+    }
+  }
+
+  askAiBtn.disabled = false;
+  askAiBtn.textContent = ASK_AI_LABEL;
+
+  if (!got){
+    showAiStatus('AI request failed for every flagged line — check AI settings.', true);
+  } else {
+    const msg = `Got suggestions for ${got} of ${flaggedIds.length} flagged line${flaggedIds.length === 1 ? '' : 's'}` + (failed ? ` (${failed} failed).` : '.');
+    showAiStatus(msg, failed > 0);
+  }
 });
 
 /* ---------- import modal ---------- */
